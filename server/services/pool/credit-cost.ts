@@ -18,6 +18,7 @@ export type ImageCreditCostContext = {
   model?: string;
   width: number;
   height: number;
+  outputCount?: number;
 };
 
 export type VideoCreditCostContext = {
@@ -144,10 +145,22 @@ function benefitTypesForContext(
     return normalizeBenefitMapping(IMAGE_GENERATE_BENEFITS[modelReqKey]?.[imageResolutionTier(context)]);
   }
 
+  return resolveVideoBenefitTypes(context, modelReqKey, adaptedVideoInput);
+}
+
+export function resolveVideoBenefitTypes(
+  context: VideoCreditCostContext,
+  resolvedModelReqKey?: string,
+  adaptedVideoInput?: AdaptedVideoInput | null,
+): string[] | null {
+  const modelReqKey = resolvedModelReqKey || resolveModelReqKey(context.model);
+  if (!modelReqKey) return null;
+
   const benefits = VIDEO_OUTPUT_BENEFITS[modelReqKey];
   if (!benefits) return null;
 
-  const resolution = adaptedVideoInput?.resolution ?? context.resolution;
+  const adaptedInput = adaptedVideoInput ?? adaptVideoInputForContext(context, modelReqKey);
+  const resolution = adaptedInput?.resolution ?? context.resolution;
   return normalizeBenefitMapping(benefits[normalizeVideoResolution(resolution)] ?? benefits["720p"]);
 }
 
@@ -250,6 +263,10 @@ function quantityForContext(
     1,
   );
   let quantity = 1;
+
+  if (context.kind === "image" && unit === "page") {
+    quantity = positiveCeil(context.outputCount, 1);
+  }
 
   if (context.kind === "video" && unit === "second") {
     const fallbackSeconds = positiveCeil(context.durationSec, 5);

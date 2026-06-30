@@ -40,6 +40,7 @@ test("image service passes normalized generation and edit cost contexts into ses
   );
   assert.ok(source.includes('kind: "image"'), "image cost context should identify image requests");
   assert.ok(source.includes("operation,"), "image cost context should include the operation");
+  assert.ok(source.includes("outputCount: operation === \"generate\" ? 4 : 1"), "image generation cost context should match Dreamina's four-image output count");
 
   const generation = serviceFunction(source, "createImageGeneration");
   assert.ok(
@@ -118,5 +119,30 @@ test("video service passes normalized video cost context into session selection"
     "const request = normalizeVideoBody(body);",
     "const session = requireActiveSession(authorization, costContext);",
     "video generation should normalize the request before selecting a session",
+  );
+});
+
+test("dreamina video client builds commerce benefit payloads from the cost resolver", () => {
+  const source = read("server/clients/dreamina/videos.ts");
+
+  assert.ok(
+    source.includes('resolveVideoBenefitTypes'),
+    "video client should import the shared video benefit resolver",
+  );
+  assert.ok(
+    source.includes("const videoBenefitTypes = resolveVideoBenefitTypes"),
+    "video client should resolve benefit types for the adapted request",
+  );
+  assert.ok(
+    source.includes("m_video_commerce_info_list"),
+    "video client should send commerce benefit info list",
+  );
+  assert.ok(
+    source.includes("videoBenefitTypes.map"),
+    "video client should build commerce benefit info list from all resolved benefit types",
+  );
+  assert.ok(
+    !source.includes('benefit_type: "basic_video_operation_vgfm_v_three"'),
+    "video client should not hardcode a single VGFM benefit for every video model",
   );
 });

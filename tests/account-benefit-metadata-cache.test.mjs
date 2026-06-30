@@ -121,6 +121,26 @@ process.exit(0);
   assert.equal(result.video.creditUnitPrice, 35);
 });
 
+test("startup fallback metadata parsing is guarded as non-fatal", () => {
+  const source = read("server/services/pool/benefit-metadata-cache.ts");
+  const start = source.indexOf("export function getStartupBenefitPriceIndex()");
+  assert.ok(start >= 0, "cache should export getStartupBenefitPriceIndex");
+  const functionBody = source.slice(start, source.indexOf("\nexport function", start + 1));
+
+  assert.ok(
+    functionBody.includes("try"),
+    "startup fallback parsing should be guarded",
+  );
+  assert.ok(
+    functionBody.includes("catch"),
+    "startup fallback parsing failures should not abort startup",
+  );
+  assert.ok(
+    functionBody.includes("return {}"),
+    "startup fallback parsing failures should preserve random scheduler fallback",
+  );
+});
+
 test("startup benefit metadata cache does not depend on runtime cwd data folder", () => {
   const result = runWithJiti(`
 const { mkdtempSync, rmSync, symlinkSync } = await import("node:fs");
@@ -174,4 +194,49 @@ process.exit(0);
 
   assert.equal(result.parserType, "function");
   assert.equal(result.gpt.creditUnitPrice, 3);
+});
+
+test("stale account benefit metadata falls back to startup price index", () => {
+  const result = runWithJiti(`
+const { getBenefitPriceIndexForAccount } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/benefit-metadata-cache.ts"),
+);
+const rawAccountMetadata = JSON.stringify({
+  ret: "0",
+  response: JSON.stringify({
+    metadata_list: [{
+      resource_type: "aigc",
+      resource_id: "generate_img",
+      benefits_pay_strategy: [{
+        benefit_type: "image_basic_gpt_image_v2",
+        credit_strategy: {
+          credit_pricing_info: {
+            unit: "page",
+            credit_unit_price: 99,
+            original_credit_unit_price: 99,
+            min_charge_count: 1,
+          },
+        },
+        role_strategy: { roles: ["all"] },
+      }],
+    }],
+  }),
+});
+const freshIndex = getBenefitPriceIndexForAccount({
+  last_benefit_metadata: rawAccountMetadata,
+  last_benefit_metadata_at: Math.floor(Date.now() / 1000),
+});
+const staleIndex = getBenefitPriceIndexForAccount({
+  last_benefit_metadata: rawAccountMetadata,
+  last_benefit_metadata_at: 1,
+});
+process.stdout.write(JSON.stringify({
+  freshPrice: freshIndex.image_basic_gpt_image_v2?.[0]?.creditUnitPrice,
+  stalePrice: staleIndex.image_basic_gpt_image_v2?.[0]?.creditUnitPrice,
+}));
+process.exit(0);
+`);
+
+  assert.equal(result.freshPrice, 99);
+  assert.equal(result.stalePrice, 3);
 });

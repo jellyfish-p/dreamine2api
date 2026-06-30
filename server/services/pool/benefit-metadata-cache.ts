@@ -9,6 +9,7 @@ import logger from "~~/server/utils/logger";
 import util from "~~/server/utils/util";
 
 let startupBenefitPriceIndex: BenefitPriceIndex | null = null;
+const BENEFIT_METADATA_TTL_SECONDS = 60 * 60;
 
 export function parseBenefitMetadataToIndex(raw?: string | null): BenefitPriceIndex | null {
   if (!raw) return null;
@@ -26,12 +27,27 @@ export function parseBenefitMetadataToIndex(raw?: string | null): BenefitPriceIn
 export function getStartupBenefitPriceIndex(): BenefitPriceIndex {
   if (startupBenefitPriceIndex) return startupBenefitPriceIndex;
 
-  const entries = normalizeBenefitMetadataResponse(fallbackBenefitMetadata);
-  startupBenefitPriceIndex = buildBenefitPriceIndex(entries);
-  logger.debug(`启动权益价格索引已加载: ${entries.length}`);
+  try {
+    const entries = normalizeBenefitMetadataResponse(fallbackBenefitMetadata);
+    startupBenefitPriceIndex = buildBenefitPriceIndex(entries);
+    logger.debug(`启动权益价格索引已加载: ${entries.length}`);
+  } catch (e: any) {
+    logger.warn(`启动权益价格索引加载失败，保留随机选号兜底: ${e?.message || String(e)}`);
+    startupBenefitPriceIndex = {};
+    return {};
+  }
   return startupBenefitPriceIndex;
 }
 
 export function getBenefitPriceIndexForAccount(row?: PoolAccountRow | null): BenefitPriceIndex {
-  return parseBenefitMetadataToIndex(row?.last_benefit_metadata) || getStartupBenefitPriceIndex();
+  if (isFreshBenefitMetadata(row?.last_benefit_metadata_at)) {
+    const accountIndex = parseBenefitMetadataToIndex(row?.last_benefit_metadata);
+    if (accountIndex) return accountIndex;
+  }
+  return getStartupBenefitPriceIndex();
+}
+
+function isFreshBenefitMetadata(timestamp?: number | null): boolean {
+  if (!Number.isFinite(timestamp) || !timestamp) return false;
+  return Math.floor(Date.now() / 1000) - timestamp <= BENEFIT_METADATA_TTL_SECONDS;
 }

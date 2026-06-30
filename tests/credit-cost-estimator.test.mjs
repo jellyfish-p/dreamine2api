@@ -74,6 +74,43 @@ process.exit(0);
   ]);
 });
 
+test("multiplies image page costs by requested output count", () => {
+  const result = runWithJiti(`
+const { estimateCreditCost } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/credit-cost.ts"),
+);
+const price = (benefitType, creditUnitPrice) => ({
+  resourceType: "aigc",
+  resourceId: "generate_img",
+  benefitType,
+  unit: "page",
+  creditUnitPrice,
+  originalCreditUnitPrice: creditUnitPrice,
+  minChargeCount: 1,
+  roles: [],
+  name: benefitType,
+});
+const index = {
+  image_basic_v5_2k: [price("image_basic_v5_2k", 15)],
+};
+const estimate = estimateCreditCost(
+  { kind: "image", operation: "generate", model: "seedream-5.0-lite", width: 2048, height: 2048, outputCount: 4 },
+  index,
+);
+process.stdout.write(JSON.stringify({ estimate }));
+process.exit(0);
+`);
+
+  assert.deepEqual(
+    {
+      credits: result.estimate?.credits,
+      quantity: result.estimate?.quantity,
+      benefitType: result.estimate?.benefitType,
+    },
+    { credits: 60, quantity: 4, benefitType: "image_basic_v5_2k" },
+  );
+});
+
 test("estimates image edit costs from image_blend without catalog model resolution", () => {
   const result = runWithJiti(`
 const { estimateCreditCost } = await jiti.import(
@@ -205,6 +242,36 @@ process.exit(0);
   assert.equal(result.estimate?.credits, 95);
   assert.ok(result.estimate?.benefitType.includes("basic_video_operation_vgfm_v_three"));
   assert.ok(result.estimate?.benefitType.includes("basic_video_operation_vgfm_v_three_1080_add"));
+});
+
+test("exports the same video benefit resolver used for cost and request payloads", () => {
+  const result = runWithJiti(`
+const { estimateCreditCost, resolveVideoBenefitTypes } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/credit-cost.ts"),
+);
+const price = (benefitType, creditUnitPrice) => ({
+  resourceType: "aigc",
+  resourceId: "generate_video",
+  benefitType,
+  unit: "second",
+  creditUnitPrice,
+  originalCreditUnitPrice: creditUnitPrice,
+  minChargeCount: 1,
+  roles: [],
+  name: benefitType,
+});
+const context = { kind: "video", model: "seedance-2.0-fast", width: 1024, height: 1024, resolution: "720p", durationSec: 5, filePaths: [] };
+const benefitTypes = resolveVideoBenefitTypes(context);
+const index = {
+  [benefitTypes[0]]: [price(benefitTypes[0], 35)],
+};
+const estimate = estimateCreditCost(context, index);
+process.stdout.write(JSON.stringify({ benefitTypes, estimate }));
+process.exit(0);
+`);
+
+  assert.deepEqual(result.benefitTypes, ["seedance_20_fast_720p_output"]);
+  assert.equal(result.estimate?.benefitType, result.benefitTypes.join("+"));
 });
 
 test("falls back to 720p video benefit mapping when requested resolution is unmapped", () => {

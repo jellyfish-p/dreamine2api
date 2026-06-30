@@ -32,6 +32,7 @@ function imageCostContext(
     model: request.model || DEFAULT_MODEL,
     width: size.width,
     height: size.height,
+    outputCount: operation === "generate" ? 4 : 1,
   };
 }
 

@@ -15,6 +15,7 @@ import {
   isSupportedVideoModelReqKey,
   listSupportedVideoModelReqKeys,
 } from "~~/server/services/pool/video-model-config";
+import { resolveVideoBenefitTypes } from "~~/server/services/pool/credit-cost";
 
 export const DEFAULT_MODEL = "seedance-2.0";
 
@@ -485,6 +486,25 @@ export async function generateVideo(
     "isRegenerate": false,
     "originSubmitId": util.uuid(),
   });
+  const videoBenefitTypes = resolveVideoBenefitTypes(
+    {
+      kind: "video",
+      model,
+      width: adaptedInput.width,
+      height: adaptedInput.height,
+      resolution: adaptedInput.resolution,
+      durationSec: adaptedInput.durationMs / 1000,
+      filePaths: adaptedInput.filePaths,
+    },
+    model,
+    adaptedInput,
+  ) || ["basic_video_operation_vgfm_v_three"];
+  const videoCommerceInfoList = videoBenefitTypes.map((benefitType) => ({
+    benefit_type: benefitType,
+    resource_id: "generate_video",
+    resource_id_type: "str",
+    resource_sub_type: "aigc",
+  }));
   
   const { aigc_data } = await request(
     "post",
@@ -500,18 +520,8 @@ export async function generateVideo(
         data: {
         "extend": {
           "root_model": model,
-          "m_video_commerce_info": {
-            benefit_type: "basic_video_operation_vgfm_v_three",
-            resource_id: "generate_video",
-            resource_id_type: "str",
-            resource_sub_type: "aigc"
-          },
-          "m_video_commerce_info_list": [{
-            benefit_type: "basic_video_operation_vgfm_v_three",
-            resource_id: "generate_video",
-            resource_id_type: "str",
-            resource_sub_type: "aigc"
-          }]
+          "m_video_commerce_info": videoCommerceInfoList[0],
+          "m_video_commerce_info_list": videoCommerceInfoList
         },
         "submit_id": util.uuid(),
         "metrics_extra": metricsExtra,
