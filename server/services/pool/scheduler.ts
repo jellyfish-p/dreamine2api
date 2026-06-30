@@ -1,6 +1,6 @@
 import { sample } from "lodash";
 import type { PoolAccountRow } from "~~/server/repositories/sqlite/schema";
-import { getBenefitPriceIndexForAccount } from "~~/server/services/pool/benefit-metadata-cache";
+import { getBenefitPriceIndexesForAccount } from "~~/server/services/pool/benefit-metadata-cache";
 import {
   estimateCreditCost,
   type CreditCostContext,
@@ -22,9 +22,8 @@ export function pickAccountForCost(costContext?: CreditCostContext): PoolAccount
     hasKnownCredit = true;
 
     try {
-      const priceIndex = getBenefitPriceIndexForAccount(row);
-      const estimate = estimateCreditCost(costContext, priceIndex, row.account_type || undefined);
-      if (!estimate) continue;
+      const estimate = estimateCreditCostForAccount(row, costContext);
+      if (!estimate) return fallback(rows, "credit cost could not be estimated");
       hasKnownCreditEstimate = true;
       if (row.last_total_credit >= estimate.credits) eligible.push(row);
     } catch (e: any) {
@@ -36,6 +35,14 @@ export function pickAccountForCost(costContext?: CreditCostContext): PoolAccount
   if (!hasKnownCreditEstimate) return fallback(rows, "credit cost could not be estimated");
   if (eligible.length === 0) return fallback(rows, "no account has enough cached credit");
   return sample(eligible);
+}
+
+function estimateCreditCostForAccount(row: PoolAccountRow, costContext: CreditCostContext) {
+  for (const priceIndex of getBenefitPriceIndexesForAccount(row)) {
+    const estimate = estimateCreditCost(costContext, priceIndex, row.account_type || undefined);
+    if (estimate) return estimate;
+  }
+  return null;
 }
 
 function fallback(rows: PoolAccountRow[], reason: string): PoolAccountRow | undefined {

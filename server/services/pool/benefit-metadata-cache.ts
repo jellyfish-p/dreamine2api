@@ -50,11 +50,20 @@ export function getStartupBenefitPriceIndex(): BenefitPriceIndex {
 }
 
 export function getBenefitPriceIndexForAccount(row?: PoolAccountRow | null): BenefitPriceIndex {
+  return getBenefitPriceIndexesForAccount(row)[0] || getStartupBenefitPriceIndex();
+}
+
+export function getBenefitPriceIndexesForAccount(row?: PoolAccountRow | null): BenefitPriceIndex[] {
+  const indexes: BenefitPriceIndex[] = [];
+
   if (isFreshBenefitMetadata(row?.last_benefit_metadata_at)) {
     const accountIndex = parseBenefitMetadataToIndex(row?.last_benefit_metadata);
-    if (accountIndex) return accountIndex;
+    if (accountIndex) indexes.push(accountIndex);
   }
-  return getStartupBenefitPriceIndex();
+
+  const startupIndex = getStartupBenefitPriceIndex();
+  if (!indexes.includes(startupIndex)) indexes.push(startupIndex);
+  return indexes;
 }
 
 function isFreshBenefitMetadata(timestamp?: number | null): boolean {

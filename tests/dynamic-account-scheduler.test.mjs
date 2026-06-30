@@ -166,6 +166,67 @@ process.exit(0);
   assert.ok([result.firstId, result.secondId].includes(result.pickedId));
 });
 
+test("scheduler falls back randomly when fresh account metadata misses the requested benefit", () => {
+  const result = runWithTempDb(`
+Math.random = () => 0;
+const { addAccount } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/accounts.ts"),
+);
+const { getDb } = await jiti.import(
+  path.join(projectRoot, "server/repositories/sqlite/database.ts"),
+);
+const { pickAccountForCost } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/scheduler.ts"),
+);
+
+const metadataFor = (benefitType, price) => JSON.stringify({
+  ret: "0",
+  response: JSON.stringify({
+    metadata_list: [{
+      resource_type: "aigc",
+      resource_id: "generate_img",
+      benefits_pay_strategy: [{
+        benefit_type: benefitType,
+        credit_strategy: {
+          credit_pricing_info: {
+            unit: "page",
+            credit_unit_price: price,
+            original_credit_unit_price: price,
+            min_charge_count: 1,
+          },
+        },
+        role_strategy: { roles: ["all"] },
+      }],
+    }],
+  }),
+});
+
+const missingId = addAccount("missing-session", "missing-benefit");
+const matchingId = addAccount("matching-session", "matching-benefit");
+const ts = Math.floor(Date.now() / 1000);
+getDb()
+  .prepare("UPDATE pool_accounts SET last_total_credit = ?, last_benefit_metadata = ?, last_benefit_metadata_at = ? WHERE id = ?")
+  .run(200, metadataFor("image_basic_gpt_image_v2", 3), ts, missingId);
+getDb()
+  .prepare("UPDATE pool_accounts SET last_total_credit = ?, last_benefit_metadata = ?, last_benefit_metadata_at = ? WHERE id = ?")
+  .run(200, metadataFor("image_basic_v5_2k", 15), ts, matchingId);
+
+const picked = pickAccountForCost({
+  kind: "image",
+  operation: "generate",
+  model: "seedream-5.0-lite",
+  width: 2048,
+  height: 2048,
+  outputCount: 4,
+});
+
+process.stdout.write(JSON.stringify({ missingId, matchingId, pickedId: picked?.id }));
+process.exit(0);
+`);
+
+  assert.equal(result.pickedId, result.missingId);
+});
+
 test("auth and session context pass credit cost context into pool account scheduling", () => {
   const auth = read("server/services/pool/auth.ts");
   const sessionContext = read("server/services/pool/session-context.ts");
