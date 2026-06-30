@@ -128,6 +128,15 @@ test("startup fallback metadata parsing is guarded as non-fatal", () => {
   const functionBody = source.slice(start, source.indexOf("\nexport function", start + 1));
 
   assert.ok(
+    source.includes('dreamina-benefit-metadata-fallback.raw'),
+    "fallback metadata should be bundled as raw text",
+  );
+  assert.ok(
+    !source.includes('import fallbackBenefitMetadata from "~~/data/dreamina-benefit-metadata-fallback.json"'),
+    "fallback metadata should not be statically parsed before the guarded path",
+  );
+
+  assert.ok(
     functionBody.includes("try"),
     "startup fallback parsing should be guarded",
   );
@@ -139,6 +148,23 @@ test("startup fallback metadata parsing is guarded as non-fatal", () => {
     functionBody.includes("return {}"),
     "startup fallback parsing failures should preserve random scheduler fallback",
   );
+});
+
+test("malformed raw startup fallback metadata returns an empty price index", () => {
+  const result = runWithJiti(`
+const { parseFallbackBenefitMetadataRaw } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/benefit-metadata-cache.ts"),
+);
+const index = parseFallbackBenefitMetadataRaw("{not-json");
+process.stdout.write(JSON.stringify({
+  parserType: typeof parseFallbackBenefitMetadataRaw,
+  keys: Object.keys(index),
+}));
+process.exit(0);
+`);
+
+  assert.equal(result.parserType, "function");
+  assert.deepEqual(result.keys, []);
 });
 
 test("startup benefit metadata cache does not depend on runtime cwd data folder", () => {

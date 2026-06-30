@@ -1,4 +1,4 @@
-import fallbackBenefitMetadata from "~~/data/dreamina-benefit-metadata-fallback.json";
+import fallbackBenefitMetadataRaw from "~~/data/dreamina-benefit-metadata-fallback.raw";
 import {
   buildBenefitPriceIndex,
   normalizeBenefitMetadataResponse,
@@ -24,13 +24,23 @@ export function parseBenefitMetadataToIndex(raw?: string | null): BenefitPriceIn
   }
 }
 
+export function parseFallbackBenefitMetadataRaw(raw: string): BenefitPriceIndex {
+  try {
+    const parsed = JSON.parse(raw);
+    const entries = normalizeBenefitMetadataResponse(parsed);
+    return buildBenefitPriceIndex(entries);
+  } catch (e: any) {
+    logger.warn(`启动权益价格索引加载失败，保留随机选号兜底: ${e?.message || String(e)}`);
+    return {};
+  }
+}
+
 export function getStartupBenefitPriceIndex(): BenefitPriceIndex {
   if (startupBenefitPriceIndex) return startupBenefitPriceIndex;
 
   try {
-    const entries = normalizeBenefitMetadataResponse(fallbackBenefitMetadata);
-    startupBenefitPriceIndex = buildBenefitPriceIndex(entries);
-    logger.debug(`启动权益价格索引已加载: ${entries.length}`);
+    startupBenefitPriceIndex = parseFallbackBenefitMetadataRaw(fallbackBenefitMetadataRaw);
+    logger.debug(`启动权益价格索引已加载: ${Object.keys(startupBenefitPriceIndex).length}`);
   } catch (e: any) {
     logger.warn(`启动权益价格索引加载失败，保留随机选号兜底: ${e?.message || String(e)}`);
     startupBenefitPriceIndex = {};
