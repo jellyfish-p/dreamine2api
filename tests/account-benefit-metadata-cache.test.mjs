@@ -120,3 +120,27 @@ process.exit(0);
   assert.equal(result.gpt.creditUnitPrice, 3);
   assert.equal(result.video.creditUnitPrice, 35);
 });
+
+test("benefit metadata cache exports parser for committed fallback raw JSON", () => {
+  const result = runWithJiti(`
+const cacheModule = await jiti.import(
+  path.join(projectRoot, "server/services/pool/benefit-metadata-cache.ts"),
+);
+const { readFileSync } = await import("node:fs");
+const raw = readFileSync(
+  path.join(projectRoot, "data/dreamina-benefit-metadata-fallback.json"),
+  "utf8",
+);
+const parserType = typeof cacheModule.parseBenefitMetadataToIndex;
+const index =
+  parserType === "function" ? cacheModule.parseBenefitMetadataToIndex(raw) : null;
+process.stdout.write(JSON.stringify({
+  parserType,
+  gpt: index?.image_basic_gpt_image_v2?.[0],
+}));
+process.exit(0);
+`);
+
+  assert.equal(result.parserType, "function");
+  assert.equal(result.gpt.creditUnitPrice, 3);
+});

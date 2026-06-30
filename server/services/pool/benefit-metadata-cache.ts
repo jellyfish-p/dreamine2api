@@ -17,7 +17,7 @@ const FALLBACK_BENEFIT_METADATA_PATH = path.resolve(
 
 let startupBenefitPriceIndex: BenefitPriceIndex | null = null;
 
-function parseBenefitMetadataToIndex(raw?: string | null): BenefitPriceIndex | null {
+export function parseBenefitMetadataToIndex(raw?: string | null): BenefitPriceIndex | null {
   if (!raw) return null;
   const parsed = util.ignoreJSONParse(raw);
   if (!parsed || typeof parsed !== "object") return null;
