@@ -74,6 +74,39 @@ process.exit(0);
   ]);
 });
 
+test("estimates image edit costs from image_blend without catalog model resolution", () => {
+  const result = runWithJiti(`
+const { estimateCreditCost } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/credit-cost.ts"),
+);
+const price = (benefitType, creditUnitPrice) => ({
+  resourceType: "aigc",
+  resourceId: "generate_img",
+  benefitType,
+  unit: "page",
+  creditUnitPrice,
+  originalCreditUnitPrice: creditUnitPrice,
+  minChargeCount: 1,
+  roles: [],
+  name: benefitType,
+});
+const index = {
+  image_blend: [price("image_blend", 5)],
+};
+const estimate = estimateCreditCost(
+  { kind: "image", operation: "edit", model: "unknown-model", width: 2048, height: 2048 },
+  index,
+);
+process.stdout.write(JSON.stringify({ estimate }));
+process.exit(0);
+`);
+
+  assert.deepEqual(
+    { credits: result.estimate?.credits, benefitType: result.estimate?.benefitType },
+    { credits: 5, benefitType: "image_blend" },
+  );
+});
+
 test("estimates video costs from second strategies and adapted duration", () => {
   const result = runWithJiti(`
 const { estimateCreditCost } = await jiti.import(
@@ -105,6 +138,39 @@ process.exit(0);
     { credits: 175, benefitType: "seedance_20_fast_720p_output" },
     { credits: 896, benefitType: "seedance_20_pro_4k_output" },
   ]);
+});
+
+test("falls back to 720p video benefit mapping when requested resolution is unmapped", () => {
+  const result = runWithJiti(`
+const { estimateCreditCost } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/credit-cost.ts"),
+);
+const price = (benefitType, creditUnitPrice) => ({
+  resourceType: "aigc",
+  resourceId: "generate_video",
+  benefitType,
+  unit: "second",
+  creditUnitPrice,
+  originalCreditUnitPrice: creditUnitPrice,
+  minChargeCount: 1,
+  roles: [],
+  name: benefitType,
+});
+const index = {
+  seedance_20_mini_720p_output: [price("seedance_20_mini_720p_output", 31)],
+};
+const estimate = estimateCreditCost(
+  { kind: "video", model: "dreamina_seedance_40_mini", width: 1024, height: 1024, resolution: "480p", durationSec: 4, filePaths: [] },
+  index,
+);
+process.stdout.write(JSON.stringify({ estimate }));
+process.exit(0);
+`);
+
+  assert.deepEqual(
+    { credits: result.estimate?.credits, benefitType: result.estimate?.benefitType },
+    { credits: 124, benefitType: "seedance_20_mini_720p_output" },
+  );
 });
 
 test("unknown benefit mapping returns null", () => {

@@ -99,10 +99,11 @@ export function estimateCreditCost(
   if (!context || !index) return null;
   if (!hasFiniteDimensions(context)) return null;
 
+  const modelOptional = context.kind === "image" && (context.operation || "generate") === "edit";
   const modelReqKey = resolveModelReqKey(context.model);
-  if (!modelReqKey) return null;
+  if (!modelReqKey && !modelOptional) return null;
 
-  const benefitType = benefitTypeForContext(context, modelReqKey);
+  const benefitType = benefitTypeForContext(context, modelReqKey || "");
   if (!benefitType) return null;
 
   const price = pickPrice(index[benefitType], accountType);
@@ -126,7 +127,10 @@ function benefitTypeForContext(context: CreditCostContext, modelReqKey: string):
     return IMAGE_GENERATE_BENEFITS[modelReqKey]?.[imageResolutionTier(context)] ?? null;
   }
 
-  return VIDEO_OUTPUT_BENEFITS[modelReqKey]?.[normalizeVideoResolution(context.resolution)] ?? null;
+  const benefits = VIDEO_OUTPUT_BENEFITS[modelReqKey];
+  if (!benefits) return null;
+
+  return benefits[normalizeVideoResolution(context.resolution)] ?? benefits["720p"] ?? null;
 }
 
 function imageResolutionTier(context: ImageCreditCostContext): ImageResolutionTier {
