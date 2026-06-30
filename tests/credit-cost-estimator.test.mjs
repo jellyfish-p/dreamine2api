@@ -140,6 +140,73 @@ process.exit(0);
   ]);
 });
 
+test("estimates seedance fast video costs from adapted resolution", () => {
+  const result = runWithJiti(`
+const { estimateCreditCost } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/credit-cost.ts"),
+);
+const price = (benefitType, creditUnitPrice) => ({
+  resourceType: "aigc",
+  resourceId: "generate_video",
+  benefitType,
+  unit: "second",
+  creditUnitPrice,
+  originalCreditUnitPrice: creditUnitPrice,
+  minChargeCount: 1,
+  roles: [],
+  name: benefitType,
+});
+const index = {
+  seedance_20_fast_720p_output: [price("seedance_20_fast_720p_output", 35)],
+  seedance_20_fast_1080p_output: [price("seedance_20_fast_1080p_output", 78)],
+};
+const estimate = estimateCreditCost(
+  { kind: "video", model: "seedance-2.0-fast", width: 1024, height: 1024, resolution: "1080p", durationSec: 5, filePaths: [] },
+  index,
+);
+process.stdout.write(JSON.stringify({ estimate }));
+process.exit(0);
+`);
+
+  assert.deepEqual(
+    { credits: result.estimate?.credits, benefitType: result.estimate?.benefitType },
+    { credits: 175, benefitType: "seedance_20_fast_720p_output" },
+  );
+});
+
+test("estimates vgfm 3.5 pro 1080p video costs from base and add-on benefits", () => {
+  const result = runWithJiti(`
+const { estimateCreditCost } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/credit-cost.ts"),
+);
+const price = (benefitType, creditUnitPrice) => ({
+  resourceType: "aigc",
+  resourceId: "generate_video",
+  benefitType,
+  unit: "second",
+  creditUnitPrice,
+  originalCreditUnitPrice: creditUnitPrice,
+  minChargeCount: 1,
+  roles: [],
+  name: benefitType,
+});
+const index = {
+  basic_video_operation_vgfm_v_three: [price("basic_video_operation_vgfm_v_three", 12)],
+  basic_video_operation_vgfm_v_three_1080_add: [price("basic_video_operation_vgfm_v_three_1080_add", 7)],
+};
+const estimate = estimateCreditCost(
+  { kind: "video", model: "seedance-1.5-pro", width: 1024, height: 1024, resolution: "1080p", durationSec: 5, filePaths: [] },
+  index,
+);
+process.stdout.write(JSON.stringify({ estimate }));
+process.exit(0);
+`);
+
+  assert.equal(result.estimate?.credits, 95);
+  assert.ok(result.estimate?.benefitType.includes("basic_video_operation_vgfm_v_three"));
+  assert.ok(result.estimate?.benefitType.includes("basic_video_operation_vgfm_v_three_1080_add"));
+});
+
 test("falls back to 720p video benefit mapping when requested resolution is unmapped", () => {
   const result = runWithJiti(`
 const { estimateCreditCost } = await jiti.import(

@@ -9,6 +9,8 @@ import { adaptVideoGenerationInput } from "./video-model-config";
 type ImageOperation = "generate" | "edit" | string;
 type ImageResolutionTier = "2k" | "4k";
 type VideoResolutionTier = "480p" | "720p" | "1080p" | "4k";
+type BenefitTypeMapping = string | string[];
+type AdaptedVideoInput = ReturnType<typeof adaptVideoGenerationInput>;
 
 export type ImageCreditCostContext = {
   kind: "image";
@@ -61,7 +63,7 @@ const IMAGE_GENERATE_BENEFITS: Record<string, Record<ImageResolutionTier, string
   },
 };
 
-const VIDEO_OUTPUT_BENEFITS: Record<string, Partial<Record<VideoResolutionTier, string>>> = {
+const VIDEO_OUTPUT_BENEFITS: Record<string, Partial<Record<VideoResolutionTier, BenefitTypeMapping>>> = {
   dreamina_seedance_40_mini: {
     "720p": "seedance_20_mini_720p_output",
     "1080p": "seedance_20_mini_1080p_output",
@@ -81,8 +83,14 @@ const VIDEO_OUTPUT_BENEFITS: Record<string, Partial<Record<VideoResolutionTier, 
   },
   "dreamina_ic_generate_video_model_vgfm_3.5_pro": {
     "720p": "basic_video_operation_vgfm_v_three",
-    "1080p": "basic_video_operation_vgfm_v_three_1080",
-    "4k": "basic_video_operation_vgfm_v_three_1080",
+    "1080p": [
+      "basic_video_operation_vgfm_v_three",
+      "basic_video_operation_vgfm_v_three_1080_add",
+    ],
+    "4k": [
+      "basic_video_operation_vgfm_v_three",
+      "basic_video_operation_vgfm_v_three_1080_add",
+    ],
   },
   "dreamina_ic_generate_video_model_vgfm_3.0_pro": {
     "720p": "basic_video_operation_vgfm",
@@ -103,34 +111,66 @@ export function estimateCreditCost(
   const modelReqKey = resolveModelReqKey(context.model);
   if (!modelReqKey && !modelOptional) return null;
 
-  const benefitType = benefitTypeForContext(context, modelReqKey || "");
-  if (!benefitType) return null;
+  const adaptedVideoInput =
+    context.kind === "video" ? adaptVideoInputForContext(context, modelReqKey || "") : null;
+  const benefitTypes = benefitTypesForContext(context, modelReqKey || "", adaptedVideoInput);
+  if (!benefitTypes) return null;
 
-  const price = pickPrice(index[benefitType], accountType);
-  if (!price) return null;
+  const prices = pricesForBenefitTypes(index, benefitTypes, accountType);
+  if (!prices) return null;
 
-  const quantity = quantityForContext(context, modelReqKey, price);
-  const unitPrice = price.creditUnitPrice;
+  const unit = commonUnit(prices);
+  if (!unit) return null;
+
+  const quantity = quantityForContext(context, prices, unit, adaptedVideoInput);
+  const unitPrice = prices.reduce((total, price) => total + price.creditUnitPrice, 0);
 
   return {
     credits: unitPrice * quantity,
-    benefitType,
-    unit: price.unit,
+    benefitType: benefitTypes.join("+"),
+    unit,
     quantity,
     unitPrice,
   };
 }
 
-function benefitTypeForContext(context: CreditCostContext, modelReqKey: string): string | null {
+function benefitTypesForContext(
+  context: CreditCostContext,
+  modelReqKey: string,
+  adaptedVideoInput: AdaptedVideoInput | null,
+): string[] | null {
   if (context.kind === "image") {
-    if ((context.operation || "generate") === "edit") return "image_blend";
-    return IMAGE_GENERATE_BENEFITS[modelReqKey]?.[imageResolutionTier(context)] ?? null;
+    if ((context.operation || "generate") === "edit") return ["image_blend"];
+    return normalizeBenefitMapping(IMAGE_GENERATE_BENEFITS[modelReqKey]?.[imageResolutionTier(context)]);
   }
 
   const benefits = VIDEO_OUTPUT_BENEFITS[modelReqKey];
   if (!benefits) return null;
 
-  return benefits[normalizeVideoResolution(context.resolution)] ?? benefits["720p"] ?? null;
+  const resolution = adaptedVideoInput?.resolution ?? context.resolution;
+  return normalizeBenefitMapping(benefits[normalizeVideoResolution(resolution)] ?? benefits["720p"]);
+}
+
+function normalizeBenefitMapping(mapping?: BenefitTypeMapping | null): string[] | null {
+  if (!mapping) return null;
+  return Array.isArray(mapping) ? mapping : [mapping];
+}
+
+function adaptVideoInputForContext(
+  context: VideoCreditCostContext,
+  modelReqKey: string,
+): AdaptedVideoInput | null {
+  try {
+    return adaptVideoGenerationInput(modelReqKey, {
+      width: context.width,
+      height: context.height,
+      resolution: context.resolution,
+      durationSec: context.durationSec,
+      filePaths: context.filePaths,
+    });
+  } catch {
+    return null;
+  }
 }
 
 function imageResolutionTier(context: ImageCreditCostContext): ImageResolutionTier {
@@ -177,36 +217,49 @@ function cheapestPrice(entries: BenefitPriceEntry[]): BenefitPriceEntry {
   );
 }
 
+function pricesForBenefitTypes(
+  index: BenefitPriceIndex,
+  benefitTypes: string[],
+  accountType?: string,
+): BenefitPriceEntry[] | null {
+  const prices: BenefitPriceEntry[] = [];
+
+  for (const benefitType of benefitTypes) {
+    const price = pickPrice(index[benefitType], accountType);
+    if (!price) return null;
+    prices.push(price);
+  }
+
+  return prices.length > 0 ? prices : null;
+}
+
+function commonUnit(prices: BenefitPriceEntry[]): string | null {
+  const unit = prices[0]?.unit;
+  if (!unit) return null;
+  return prices.every((price) => price.unit === unit) ? unit : null;
+}
+
 function quantityForContext(
   context: CreditCostContext,
-  modelReqKey: string,
-  price: BenefitPriceEntry,
+  prices: BenefitPriceEntry[],
+  unit: string,
+  adaptedVideoInput: AdaptedVideoInput | null,
 ): number {
-  const minChargeCount = positiveCeil(price.minChargeCount, 1);
+  const minChargeCount = prices.reduce(
+    (max, price) => Math.max(max, positiveCeil(price.minChargeCount, 1)),
+    1,
+  );
   let quantity = 1;
 
-  if (context.kind === "video" && price.unit === "second") {
-    quantity = adaptedDurationSeconds(context, modelReqKey);
+  if (context.kind === "video" && unit === "second") {
+    const fallbackSeconds = positiveCeil(context.durationSec, 5);
+    quantity = positiveCeil(
+      adaptedVideoInput ? adaptedVideoInput.durationMs / 1000 : undefined,
+      fallbackSeconds,
+    );
   }
 
   return Math.max(quantity, minChargeCount);
-}
-
-function adaptedDurationSeconds(context: VideoCreditCostContext, modelReqKey: string): number {
-  const fallbackSeconds = positiveCeil(context.durationSec, 5);
-
-  try {
-    const adapted = adaptVideoGenerationInput(modelReqKey, {
-      width: context.width,
-      height: context.height,
-      resolution: context.resolution,
-      durationSec: context.durationSec,
-      filePaths: context.filePaths,
-    });
-    return positiveCeil(adapted.durationMs / 1000, fallbackSeconds);
-  } catch {
-    return fallbackSeconds;
-  }
 }
 
 function positiveCeil(value: number | undefined, fallback: number): number {
