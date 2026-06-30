@@ -1,0 +1,281 @@
+{
+  "scraped_at": "2026-06-26T09:07:42.871Z",
+  "source": "https://dreamina.capcut.com/ai-tool/home SSR __GTW_GENERATE_MODEL_CONFIG__",
+  "image_models": [
+    {
+      "model_req_key": "dreamina_lib_img_20260423",
+      "model_name": "web_model_gpt_image_2_name",
+      "model_tip": "web_model_gpt_image_2_desc",
+      "feats": [
+        "new_model",
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "simple_image",
+        "etta",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "refuse_image",
+        "hide_custom_ratio",
+        "gpt_image_model",
+        "per_piece"
+      ],
+      "resolution_map": [
+        "1k"
+      ]
+    },
+    {
+      "model_req_key": "high_aes_general_v50",
+      "model_name": "Image 5.0 Lite",
+      "model_tip": "Prompt-based image creation with high precision.",
+      "feats": [
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "refuse_image",
+        "smart_scale",
+        "per_piece",
+        "think_then_draw",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "etta",
+        "support_subject"
+      ],
+      "resolution_map": [
+        "2k",
+        "4k"
+      ]
+    },
+    {
+      "model_req_key": "high_aes_general_v43",
+      "model_name": "Image 4.7",
+      "model_tip": "Better quality, more accurate prompt understanding.",
+      "feats": [
+        "new_model",
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "refuse_image",
+        "smart_scale",
+        "per_piece",
+        "think_then_draw",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "etta",
+        "support_subject"
+      ],
+      "resolution_map": [
+        "2k",
+        "4k"
+      ]
+    },
+    {
+      "model_req_key": "high_aes_general_v42",
+      "model_name": "Image 4.6",
+      "model_tip": "Improved character consistency. Efficient on credits.",
+      "feats": [
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "refuse_image",
+        "smart_scale",
+        "per_piece",
+        "think_then_draw",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "etta",
+        "support_subject"
+      ],
+      "resolution_map": [
+        "2k",
+        "4k"
+      ]
+    },
+    {
+      "model_req_key": "high_aes_general_v40l",
+      "model_name": "Image 4.5",
+      "model_tip": "Reliable character and style consistency for every prompt.",
+      "feats": [
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "refuse_image",
+        "smart_scale",
+        "per_piece",
+        "think_then_draw",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "etta",
+        "support_subject"
+      ],
+      "resolution_map": [
+        "2k",
+        "4k"
+      ]
+    },
+    {
+      "model_req_key": "high_aes_general_v41",
+      "model_name": "Image 4.1",
+      "model_tip": "More creative, better aesthetics, and always consistent characters.",
+      "feats": [
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "refuse_image",
+        "smart_scale",
+        "per_piece",
+        "think_then_draw",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "etta",
+        "support_subject"
+      ],
+      "resolution_map": [
+        "2k",
+        "4k"
+      ]
+    },
+    {
+      "model_req_key": "high_aes_general_v40",
+      "model_name": "Image 4.0",
+      "model_tip": "Supports multiple references and batch generation.",
+      "feats": [
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "refuse_image",
+        "smart_scale",
+        "per_piece",
+        "think_then_draw",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "etta",
+        "support_subject"
+      ],
+      "resolution_map": [
+        "2k",
+        "4k"
+      ]
+    },
+    {
+      "model_req_key": "external_model_gemini_flash_image_v25",
+      "model_name": "Nano Banana",
+      "model_tip": "The all-in-one image model.",
+      "feats": [
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "simple_image",
+        "refuse_image",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "gemini",
+        "per_piece"
+      ],
+      "resolution_map": [
+        "1k"
+      ]
+    },
+    {
+      "model_req_key": "high_aes_general_v30l_art:general_v3.0_18b",
+      "model_name": "Image 3.1",
+      "model_tip": "Delivers striking visuals with rich, versatile aesthetics.",
+      "feats": [
+        "default_scene",
+        "etta",
+        "t2i",
+        "character",
+        "face_swap",
+        "bg_paint"
+      ],
+      "resolution_map": [
+        "1k",
+        "2k"
+      ]
+    },
+    {
+      "model_req_key": "high_aes_general_v30l:general_v3.0_18b",
+      "model_name": "Image 3.0",
+      "model_tip": "Studio quality, precise text generation, native 2K resolution.",
+      "feats": [
+        "default_scene",
+        "etta",
+        "t2i",
+        "face_swap",
+        "byte_edit",
+        "byte_edit_with_custom_ratio",
+        "byte_edit_with_empty_prompt"
+      ],
+      "resolution_map": [
+        "1k",
+        "2k"
+      ]
+    }
+  ],
+  "video_models": [
+    {
+      "model_req_key": "dreamina_seedance_40_mini",
+      "model_name": "Dreamina Seedance 2.0 Mini",
+      "model_tip": "Most cost-effective, quicker results. Real human faces are not supported.",
+      "options": [
+        "resolution",
+        "unified_edit",
+        "input_media_type",
+        "frames",
+        "fps",
+        "video_aspect_ratio"
+      ]
+    },
+    {
+      "model_req_key": "dreamina_seedance_40",
+      "model_name": "Dreamina Seedance 2.0 Fast",
+      "model_tip": "Fast generation, lower cost. Real human faces are not supported.",
+      "options": [
+        "resolution",
+        "unified_edit",
+        "input_media_type",
+        "frames",
+        "fps",
+        "video_aspect_ratio"
+      ]
+    },
+    {
+      "model_req_key": "dreamina_seedance_40_pro",
+      "model_name": "Dreamina Seedance 2.0",
+      "model_tip": "Most versatile, director-level control. Real human faces are not supported.",
+      "options": [
+        "resolution",
+        "unified_edit",
+        "input_media_type",
+        "frames",
+        "fps",
+        "video_aspect_ratio"
+      ]
+    },
+    {
+      "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.5_pro",
+      "model_name": "Dreamina Seedance 1.5 Pro",
+      "model_tip": "Generates videos with synced, natural sound.",
+      "options": [
+        "input_media_type",
+        "resolution",
+        "frames",
+        "fps",
+        "video_aspect_ratio"
+      ]
+    },
+    {
+      "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_fast",
+      "model_name": "Dreamina Seedance 1.0 Fast",
+      "model_tip": "Film-level performance, faster and more credit-efficient.",
+      "options": [
+        "multi_frames",
+        "input_media_type",
+        "resolution",
+        "frames",
+        "fps",
+        "video_aspect_ratio"
+      ]
+    }
+  ]
+}

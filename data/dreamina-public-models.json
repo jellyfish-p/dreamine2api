@@ -1,0 +1,48 @@
+{
+  "updated_at": "2026-06-26T09:06:00.000Z",
+  "note": "Public API model ids; generation uses model_req_key via src/lib/pool/model-catalog.ts",
+  "image": [
+    { "id": "gpt-image-2", "model_req_key": "dreamina_lib_img_20260423", "name": "GPT Image 2" },
+    { "id": "seedream-5.0-lite", "model_req_key": "high_aes_general_v50", "name": "Seedream 5.0 Lite" },
+    { "id": "seedream-4.7", "model_req_key": "high_aes_general_v43", "name": "Seedream 4.7" },
+    { "id": "seedream-4.6", "model_req_key": "high_aes_general_v42", "name": "Seedream 4.6" },
+    { "id": "seedream-4.5", "model_req_key": "high_aes_general_v40l", "name": "Seedream 4.5" },
+    { "id": "seedream-4.1", "model_req_key": "high_aes_general_v41", "name": "Seedream 4.1" },
+    { "id": "seedream-4.0", "model_req_key": "high_aes_general_v40", "name": "Seedream 4.0" },
+    { "id": "nano-banana", "model_req_key": "external_model_gemini_flash_image_v25", "name": "Nano Banana" },
+    { "id": "seedream-3.1", "model_req_key": "high_aes_general_v30l_art:general_v3.0_18b", "name": "Seedream 3.1" },
+    { "id": "seedream-3.0", "model_req_key": "high_aes_general_v30l:general_v3.0_18b", "name": "Seedream 3.0" }
+  ],
+  "video": [
+    { "id": "seedance-2.0-mini", "model_req_key": "dreamina_seedance_40_mini", "name": "Seedance 2.0 Mini" },
+    { "id": "seedance-2.0-fast", "model_req_key": "dreamina_seedance_40", "name": "Seedance 2.0 Fast" },
+    { "id": "seedance-2.0", "model_req_key": "dreamina_seedance_40_pro", "name": "Seedance 2.0" },
+    { "id": "seedance-1.5-pro", "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.5_pro", "name": "Seedance 1.5 Pro" },
+    { "id": "seedance-1.0-fast", "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_fast", "name": "Seedance 1.0 Fast" },
+    { "id": "seedance-1.0", "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0", "name": "Seedance 1.0" },
+    { "id": "seedance-1.0-pro", "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_pro", "name": "Seedance 1.0 Pro" },
+    { "id": "sora2", "model_req_key": "dreamina_sora2_generate_video", "name": "Sora 2" },
+    { "id": "veo-3.1", "model_req_key": "dreamina_veo3.1_generate_video", "name": "Veo 3.1" },
+    { "id": "veo-3", "model_req_key": "dreamina_veo3_generate_video", "name": "Veo 3" }
+  ],
+  "account_snapshot": {
+    "session_hint": "c6196ca7…accfa",
+    "fetched_at": "2026-06-26T09:06:02.818Z",
+    "account_visible_req_keys": {
+      "image": [
+        "high_aes_general_v50",
+        "high_aes_general_v42",
+        "high_aes_general_v40l",
+        "high_aes_general_v41",
+        "high_aes_general_v40",
+        "high_aes_general_v30l:general_v3.0_18b"
+      ],
+      "video": [
+        "dreamina_seedance_40",
+        "dreamina_seedance_40_pro",
+        "dreamina_ic_generate_video_model_vgfm_3.5_pro",
+        "dreamina_ic_generate_video_model_vgfm_3.0"
+      ]
+    }
+  }
+}

@@ -1,0 +1,24 @@
+[server]
+name = "dreamine2api"
+host = "0.0.0.0"
+port = 5200
+
+[system]
+request_log = true
+tmp_dir = "./tmp"
+log_dir = "./logs"
+public_dir = "./public"
+
+[proxy]
+global_proxy_url = ""
+credit_refresh_proxy_url = ""
+
+[pool]
+api_key = "sk-1999"
+
+[admin]
+api_key = "123456"
+enabled = true
+
+[database]
+path = "data/dreamine2api.db"

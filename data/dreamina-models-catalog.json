@@ -1,0 +1,276 @@
+{
+  "built_at": "2026-06-26T09:09:05.472Z",
+  "note": "public_id for /v1/models and request model; maps to model_req_key",
+  "account_snapshot": {
+    "fetched_at": "2026-06-26T09:07:42.768Z",
+    "image": [
+      "high_aes_general_v50",
+      "high_aes_general_v42",
+      "high_aes_general_v40l",
+      "high_aes_general_v41",
+      "high_aes_general_v40",
+      "high_aes_general_v30l:general_v3.0_18b"
+    ],
+    "video": [
+      "dreamina_seedance_40",
+      "dreamina_seedance_40_pro",
+      "dreamina_ic_generate_video_model_vgfm_3.5_pro",
+      "dreamina_ic_generate_video_model_vgfm_3.0"
+    ]
+  },
+  "models": [
+    {
+      "public_id": "gpt-image-2",
+      "model_req_key": "dreamina_lib_img_20260423",
+      "model_type": "image",
+      "display_name": "GPT Image 2",
+      "model_name": "web_model_gpt_image_2_name",
+      "model_tip": "web_model_gpt_image_2_desc",
+      "feats": [
+        "new_model",
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "simple_image",
+        "etta",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "refuse_image",
+        "hide_custom_ratio",
+        "gpt_image_model",
+        "per_piece"
+      ],
+      "resolution_map": [
+        "1k"
+      ],
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedream-5.0-lite",
+      "model_req_key": "high_aes_general_v50",
+      "model_type": "image",
+      "display_name": "Seedream 5.0 Lite",
+      "model_name": "Image 5.0 Lite",
+      "model_tip": "Prompt-based image creation with high precision.",
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedream-4.7",
+      "model_req_key": "high_aes_general_v43",
+      "model_type": "image",
+      "display_name": "Seedream 4.7",
+      "model_name": "Image 4.7",
+      "model_tip": "Better quality, more accurate prompt understanding.",
+      "feats": [
+        "new_model",
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "refuse_image",
+        "smart_scale",
+        "per_piece",
+        "think_then_draw",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "etta",
+        "support_subject"
+      ],
+      "resolution_map": [
+        "2k",
+        "4k"
+      ],
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedream-4.6",
+      "model_req_key": "high_aes_general_v42",
+      "model_type": "image",
+      "display_name": "Seedream 4.6",
+      "model_name": "Image 4.6",
+      "model_tip": "Improved character consistency. Efficient on credits.",
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedream-4.5",
+      "model_req_key": "high_aes_general_v40l",
+      "model_type": "image",
+      "display_name": "Seedream 4.5",
+      "model_name": "Image 4.5",
+      "model_tip": "Reliable character and style consistency for every prompt.",
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedream-4.1",
+      "model_req_key": "high_aes_general_v41",
+      "model_type": "image",
+      "display_name": "Seedream 4.1",
+      "model_name": "Image 4.1",
+      "model_tip": "More creative, better aesthetics, and always consistent characters.",
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedream-4.0",
+      "model_req_key": "high_aes_general_v40",
+      "model_type": "image",
+      "display_name": "Seedream 4.0",
+      "model_name": "Image 4.0",
+      "model_tip": "Supports multiple references and batch generation.",
+      "upstream_seen": true
+    },
+    {
+      "public_id": "nano-banana",
+      "model_req_key": "external_model_gemini_flash_image_v25",
+      "model_type": "image",
+      "display_name": "Nano Banana",
+      "model_name": "Nano Banana",
+      "model_tip": "The all-in-one image model.",
+      "feats": [
+        "default_scene",
+        "t2i",
+        "byte_edit",
+        "simple_image",
+        "refuse_image",
+        "byte_edit_with_empty_prompt",
+        "byte_edit_with_custom_ratio",
+        "gemini",
+        "per_piece"
+      ],
+      "resolution_map": [
+        "1k"
+      ],
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedream-3.1",
+      "model_req_key": "high_aes_general_v30l_art:general_v3.0_18b",
+      "model_type": "image",
+      "display_name": "Seedream 3.1",
+      "model_name": "Image 3.1",
+      "model_tip": "Delivers striking visuals with rich, versatile aesthetics.",
+      "feats": [
+        "default_scene",
+        "etta",
+        "t2i",
+        "character",
+        "face_swap",
+        "bg_paint"
+      ],
+      "resolution_map": [
+        "1k",
+        "2k"
+      ],
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedream-3.0",
+      "model_req_key": "high_aes_general_v30l:general_v3.0_18b",
+      "model_type": "image",
+      "display_name": "Seedream 3.0",
+      "model_name": "Image 3.0",
+      "model_tip": "Studio quality, precise text generation, native 2K resolution.",
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedance-2.0-mini",
+      "model_req_key": "dreamina_seedance_40_mini",
+      "model_type": "video",
+      "display_name": "Seedance 2.0 Mini",
+      "model_name": "Dreamina Seedance 2.0 Mini",
+      "model_tip": "Most cost-effective, quicker results. Real human faces are not supported.",
+      "options": [
+        "resolution",
+        "unified_edit",
+        "input_media_type",
+        "frames",
+        "fps",
+        "video_aspect_ratio"
+      ],
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedance-2.0-fast",
+      "model_req_key": "dreamina_seedance_40",
+      "model_type": "video",
+      "display_name": "Seedance 2.0 Fast",
+      "model_name": "Dreamina Seedance 2.0 Fast",
+      "model_tip": "Fast generation, lower cost. Real human faces are not supported.",
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedance-2.0",
+      "model_req_key": "dreamina_seedance_40_pro",
+      "model_type": "video",
+      "display_name": "Seedance 2.0",
+      "model_name": "Dreamina Seedance 2.0",
+      "model_tip": "Most versatile, director-level control. Real human faces are not supported.",
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedance-1.5-pro",
+      "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.5_pro",
+      "model_type": "video",
+      "display_name": "Seedance 1.5 Pro",
+      "model_name": "Dreamina Seedance 1.5 Pro",
+      "model_tip": "Generates videos with synced, natural sound.",
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedance-1.0-fast",
+      "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_fast",
+      "model_type": "video",
+      "display_name": "Seedance 1.0 Fast",
+      "model_name": "Dreamina Seedance 1.0 Fast",
+      "model_tip": "Film-level performance, faster and more credit-efficient.",
+      "options": [
+        "multi_frames",
+        "input_media_type",
+        "resolution",
+        "frames",
+        "fps",
+        "video_aspect_ratio"
+      ],
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedance-1.0",
+      "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0",
+      "model_type": "video",
+      "display_name": "Seedance 1.0",
+      "model_name": "Dreamina Seedance 1.0 Mini",
+      "model_tip": "Creates multiple scenes with one detailed prompt.",
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedance-1.0-pro",
+      "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_pro",
+      "model_type": "video",
+      "display_name": "Seedance 1.0 Pro",
+      "model_name": "Seedance 1.0 Pro",
+      "upstream_seen": false
+    },
+    {
+      "public_id": "sora2",
+      "model_req_key": "dreamina_sora2_generate_video",
+      "model_type": "video",
+      "display_name": "Sora 2",
+      "model_name": "Sora 2",
+      "upstream_seen": false
+    },
+    {
+      "public_id": "veo-3.1",
+      "model_req_key": "dreamina_veo3.1_generate_video",
+      "model_type": "video",
+      "display_name": "Veo 3.1",
+      "model_name": "Veo 3.1",
+      "upstream_seen": false
+    },
+    {
+      "public_id": "veo-3",
+      "model_req_key": "dreamina_veo3_generate_video",
+      "model_type": "video",
+      "display_name": "Veo 3",
+      "model_name": "Veo 3",
+      "upstream_seen": false
+    }
+  ]
+}
