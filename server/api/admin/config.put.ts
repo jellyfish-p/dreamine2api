@@ -5,8 +5,8 @@ import {
   readAppConfig,
   writeAppConfig,
   type AppConfig,
-} from "../../utils/app-config";
-import { syncTomlToSqlite } from "../../utils/sync-config";
+} from "../../config/app-config";
+import { syncTomlToSqlite } from "../../config/sync-config";
 
 export default defineEventHandler(async (event) => {
   assertAdmin(event);

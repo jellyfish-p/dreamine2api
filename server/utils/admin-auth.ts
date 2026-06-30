@@ -1,5 +1,5 @@
-import type { H3Event } from "h3";
-import { readAppConfig } from "./app-config";
+import { createError, getRequestHeader, type H3Event } from "h3";
+import { readAppConfig } from "../config/app-config";
 
 export function getBearer(event: H3Event): string {
   const auth = getRequestHeader(event, "authorization") || "";

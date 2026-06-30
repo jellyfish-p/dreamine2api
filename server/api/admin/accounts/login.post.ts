@@ -1,10 +1,11 @@
 import { assertAdmin } from "../../../utils/admin-auth";
-import { loginWithEmail } from "@legacy/api/controllers/auth.ts";
+import { loginWithEmail } from "~~/server/clients/dreamina/auth";
 import {
   addAccount,
   listAccounts,
+  refreshAccountSnapshot,
   updateAccount,
-} from "@legacy/lib/pool/accounts.ts";
+} from "~~/server/services/pool/accounts";
 
 export default defineEventHandler(async (event) => {
   assertAdmin(event);
@@ -50,23 +51,26 @@ export default defineEventHandler(async (event) => {
       user_id: result.userId,
       user_name: userName,
     });
+    const snapshot = await refreshAccountSnapshot(existing.id);
     return {
       ok: true,
       action: "updated",
-      id: existing.id,
       user_id: result.userId,
+      ...snapshot,
     };
   }
 
-  addAccount(result.sessionId, body.label, body.proxy_url, {
+  const id = addAccount(result.sessionId, body.label, body.proxy_url, {
     email: body.email,
     password: body.password,
     userId: result.userId,
     userName,
   });
+  const snapshot = await refreshAccountSnapshot(id);
   return {
     ok: true,
     action: "added",
     user_id: result.userId,
+    ...snapshot,
   };
 });

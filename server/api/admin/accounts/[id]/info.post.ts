@@ -1,5 +1,5 @@
 import { assertAdmin } from "../../../../utils/admin-auth";
-import { fetchAccountInfo } from "@legacy/lib/pool/accounts.ts";
+import { fetchAccountInfo } from "~~/server/services/pool/accounts";
 
 export default defineEventHandler(async (event) => {
   assertAdmin(event);

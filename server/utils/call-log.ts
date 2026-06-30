@@ -1,4 +1,4 @@
-import { getDb } from "@legacy/lib/db/index.ts";
+import { getDb } from "~~/server/repositories/sqlite/database";
 
 export type CallLogInput = {
   path: string;

@@ -1,9 +1,0 @@
-{
-  "pid": 4552,
-  "startedAt": 1782740747270,
-  "command": "dev",
-  "cwd": "H:/Documents/GitHub/dreamine2api",
-  "port": 5200,
-  "hostname": "0.0.0.0",
-  "url": "http://0.0.0.0:5200"
-}

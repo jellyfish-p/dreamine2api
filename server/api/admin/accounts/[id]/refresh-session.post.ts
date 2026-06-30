@@ -1,5 +1,5 @@
 import { assertAdmin } from "../../../../utils/admin-auth";
-import { refreshSession } from "@legacy/lib/pool/accounts.ts";
+import { refreshSession } from "~~/server/services/pool/accounts";
 
 export default defineEventHandler(async (event) => {
   assertAdmin(event);

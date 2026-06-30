@@ -7,8 +7,8 @@ const projectRoot = process.cwd();
 
 test("upload headers do not use undefined as a filename", () => {
   for (const file of [
-    "src/api/controllers/images.ts",
-    "src/api/controllers/videos.ts",
+    "server/clients/dreamina/images.ts",
+    "server/clients/dreamina/videos.ts",
   ]) {
     const source = fs.readFileSync(path.join(projectRoot, file), "utf8");
     assert.equal(

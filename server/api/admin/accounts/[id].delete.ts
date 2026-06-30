@@ -1,5 +1,5 @@
 import { assertAdmin } from "../../../utils/admin-auth";
-import { deleteAccount } from "@legacy/lib/pool/accounts.ts";
+import { deleteAccount } from "~~/server/services/pool/accounts";
 
 export default defineEventHandler((event) => {
   assertAdmin(event);

@@ -1,1 +1,0 @@
-import{aQ as n,p as t}from"./CMft8zqu.js";import{u as i}from"./Bmp-pNer.js";const u=n(a=>{if(a.path==="/admin/login")return;const{token:e}=i();if(!e.value)return t("/admin/login")});export{u as default};

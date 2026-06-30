@@ -31,16 +31,16 @@ import { pathToFileURL } from "node:url";
 const projectRoot = ${JSON.stringify(projectRoot)};
 ${prefix}
 
-const srcDir = path.join(projectRoot, "src");
+const rootAlias = projectRoot;
 const jiti = createJiti(pathToFileURL(path.join(projectRoot, "package.json")).href, {
   alias: {
-    "@": srcDir,
-    "@/*": path.join(srcDir, "*"),
+    "~~": rootAlias,
+    "~~/*": path.join(rootAlias, "*"),
   },
   tsconfigPaths: true,
   interopDefault: true,
 });
-const logger = await jiti.import(path.join(projectRoot, "src/lib/logger.ts"), { default: true });
+const logger = await jiti.import(path.join(projectRoot, "server/utils/logger.ts"), { default: true });
 
 ${body}
 `;

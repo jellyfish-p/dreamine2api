@@ -1,5 +1,5 @@
 import { assertAdmin } from "../../utils/admin-auth";
-import { addAccount } from "@legacy/lib/pool/accounts.ts";
+import { addAccount, refreshAccountSnapshot } from "~~/server/services/pool/accounts";
 
 export default defineEventHandler(async (event) => {
   assertAdmin(event);
@@ -7,6 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!body?.session_id?.trim()) {
     throw createError({ statusCode: 400, message: "session_id required" });
   }
-  addAccount(body.session_id, body.label, body.proxy_url);
-  return { ok: true };
+  const id = addAccount(body.session_id, body.label, body.proxy_url);
+  const snapshot = await refreshAccountSnapshot(id);
+  return { ok: true, ...snapshot };
 });

@@ -112,104 +112,6 @@
         "2k",
         "4k"
       ]
-    },
-    {
-      "model_req_key": "high_aes_general_v41",
-      "model_name": "Image 4.1",
-      "model_tip": "More creative, better aesthetics, and always consistent characters.",
-      "feats": [
-        "default_scene",
-        "t2i",
-        "byte_edit",
-        "refuse_image",
-        "smart_scale",
-        "per_piece",
-        "think_then_draw",
-        "byte_edit_with_empty_prompt",
-        "byte_edit_with_custom_ratio",
-        "etta",
-        "support_subject"
-      ],
-      "resolution_map": [
-        "2k",
-        "4k"
-      ]
-    },
-    {
-      "model_req_key": "high_aes_general_v40",
-      "model_name": "Image 4.0",
-      "model_tip": "Supports multiple references and batch generation.",
-      "feats": [
-        "default_scene",
-        "t2i",
-        "byte_edit",
-        "refuse_image",
-        "smart_scale",
-        "per_piece",
-        "think_then_draw",
-        "byte_edit_with_empty_prompt",
-        "byte_edit_with_custom_ratio",
-        "etta",
-        "support_subject"
-      ],
-      "resolution_map": [
-        "2k",
-        "4k"
-      ]
-    },
-    {
-      "model_req_key": "external_model_gemini_flash_image_v25",
-      "model_name": "Nano Banana",
-      "model_tip": "The all-in-one image model.",
-      "feats": [
-        "default_scene",
-        "t2i",
-        "byte_edit",
-        "simple_image",
-        "refuse_image",
-        "byte_edit_with_empty_prompt",
-        "byte_edit_with_custom_ratio",
-        "gemini",
-        "per_piece"
-      ],
-      "resolution_map": [
-        "1k"
-      ]
-    },
-    {
-      "model_req_key": "high_aes_general_v30l_art:general_v3.0_18b",
-      "model_name": "Image 3.1",
-      "model_tip": "Delivers striking visuals with rich, versatile aesthetics.",
-      "feats": [
-        "default_scene",
-        "etta",
-        "t2i",
-        "character",
-        "face_swap",
-        "bg_paint"
-      ],
-      "resolution_map": [
-        "1k",
-        "2k"
-      ]
-    },
-    {
-      "model_req_key": "high_aes_general_v30l:general_v3.0_18b",
-      "model_name": "Image 3.0",
-      "model_tip": "Studio quality, precise text generation, native 2K resolution.",
-      "feats": [
-        "default_scene",
-        "etta",
-        "t2i",
-        "face_swap",
-        "byte_edit",
-        "byte_edit_with_custom_ratio",
-        "byte_edit_with_empty_prompt"
-      ],
-      "resolution_map": [
-        "1k",
-        "2k"
-      ]
     }
   ],
   "video_models": [
@@ -265,11 +167,10 @@
       ]
     },
     {
-      "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_fast",
-      "model_name": "Dreamina Seedance 1.0 Fast",
-      "model_tip": "Film-level performance, faster and more credit-efficient.",
+      "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_pro",
+      "model_name": "Dreamina Seedance 1.0",
+      "model_tip": "",
       "options": [
-        "multi_frames",
         "input_media_type",
         "resolution",
         "frames",

@@ -1,9 +1,4 @@
-import { fileURLToPath } from "node:url";
-
 export default defineNuxtConfig({
-  alias: {
-    "@legacy": fileURLToPath(new URL("./src", import.meta.url)),
-  },
   compatibilityDate: "2025-06-01",
   devtools: { enabled: true },
   modules: ["@nuxt/ui"],
@@ -21,10 +16,6 @@ export default defineNuxtConfig({
     port: 5200,
   },
   nitro: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "@legacy": fileURLToPath(new URL("./src", import.meta.url)),
-    },
     externals: {
       external: ["better-sqlite3"],
     },

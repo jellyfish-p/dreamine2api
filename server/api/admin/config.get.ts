@@ -1,5 +1,5 @@
 import { assertAdmin } from "../../utils/admin-auth";
-import { readAppConfig } from "../../utils/app-config";
+import { readAppConfig } from "../../config/app-config";
 
 export default defineEventHandler((event) => {
   assertAdmin(event);

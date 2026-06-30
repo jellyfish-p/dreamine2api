@@ -23,6 +23,20 @@ const AID = "513641";
 const PLATFORM = "7";
 const VERSION = "8.4.0";
 const DEVICE_ID = "7000000000000000001";
+const ALLOWED_IMAGE_MODEL_REQ_KEYS = new Set([
+  "dreamina_lib_img_20260423",
+  "high_aes_general_v50",
+  "high_aes_general_v43",
+  "high_aes_general_v42",
+  "high_aes_general_v40l",
+]);
+const ALLOWED_VIDEO_MODEL_REQ_KEYS = new Set([
+  "dreamina_seedance_40_mini",
+  "dreamina_seedance_40",
+  "dreamina_seedance_40_pro",
+  "dreamina_ic_generate_video_model_vgfm_3.5_pro",
+  "dreamina_ic_generate_video_model_vgfm_3.0_pro",
+]);
 
 function sign(uri) {
   const t = Math.floor(Date.now() / 1000);
@@ -75,11 +89,15 @@ async function mwebPost(uri, data, extraParams = {}) {
 }
 
 function slim(list, type) {
-  return (list || []).map((m) => ({
+  const allowed = type === "image" ? ALLOWED_IMAGE_MODEL_REQ_KEYS : ALLOWED_VIDEO_MODEL_REQ_KEYS;
+  return (list || []).filter((m) => allowed.has(m.model_req_key)).map((m) => ({
     model_req_key: m.model_req_key,
     model_name: m.model_name || m.model_name_starling_key,
     model_tip: m.model_tip || m.model_tip_starling_key,
     type,
+    options: Array.isArray(m.options)
+      ? m.options.map((option) => option?.key).filter((key) => typeof key === "string")
+      : undefined,
   }));
 }
 
