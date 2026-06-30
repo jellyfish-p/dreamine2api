@@ -14,20 +14,26 @@ export function pickAccountForCost(costContext?: CreditCostContext): PoolAccount
   if (!costContext) return sample(rows);
 
   const eligible: PoolAccountRow[] = [];
+  let hasKnownCredit = false;
+  let hasKnownCreditEstimate = false;
 
   for (const row of rows) {
-    if (row.last_total_credit == null) return fallback(rows, "cached credit is missing");
+    if (row.last_total_credit == null) continue;
+    hasKnownCredit = true;
 
     try {
       const priceIndex = getBenefitPriceIndexForAccount(row);
       const estimate = estimateCreditCost(costContext, priceIndex, row.account_type || undefined);
-      if (!estimate) return fallback(rows, "credit cost could not be estimated");
+      if (!estimate) continue;
+      hasKnownCreditEstimate = true;
       if (row.last_total_credit >= estimate.credits) eligible.push(row);
     } catch (e: any) {
       return fallback(rows, `credit cost estimation failed: ${e?.message || String(e)}`);
     }
   }
 
+  if (!hasKnownCredit) return fallback(rows, "cached credit is missing");
+  if (!hasKnownCreditEstimate) return fallback(rows, "credit cost could not be estimated");
   if (eligible.length === 0) return fallback(rows, "no account has enough cached credit");
   return sample(eligible);
 }

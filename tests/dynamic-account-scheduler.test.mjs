@@ -92,6 +92,44 @@ process.exit(0);
   assert.equal(result.pickedId, result.highId);
 });
 
+test("scheduler skips unknown cached credit when a known account can cover the cost", () => {
+  const result = runWithTempDb(`
+const { addAccount } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/accounts.ts"),
+);
+const { getDb } = await jiti.import(
+  path.join(projectRoot, "server/repositories/sqlite/database.ts"),
+);
+const { pickAccountForCost } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/scheduler.ts"),
+);
+
+const unknownId = addAccount("unknown-session", "unknown-credit");
+const highId = addAccount("high-session", "high-credit");
+getDb()
+  .prepare("UPDATE pool_accounts SET last_total_credit = ? WHERE id = ?")
+  .run(null, unknownId);
+getDb()
+  .prepare("UPDATE pool_accounts SET last_total_credit = ? WHERE id = ?")
+  .run(200, highId);
+
+Math.random = () => 0;
+const picked = pickAccountForCost({
+  kind: "image",
+  operation: "generate",
+  model: "seedream-5.0-lite",
+  width: 2048,
+  height: 2048,
+});
+
+process.stdout.write(JSON.stringify({ unknownId, highId, pickedId: picked?.id }));
+process.exit(0);
+`);
+
+  assert.notEqual(result.pickedId, result.unknownId);
+  assert.equal(result.pickedId, result.highId);
+});
+
 test("scheduler falls back to random enabled selection when cost cannot be estimated", () => {
   const result = runWithTempDb(`
 const { addAccount } = await jiti.import(
