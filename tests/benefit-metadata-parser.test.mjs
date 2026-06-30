@@ -101,7 +101,9 @@ const raw = JSON.parse(fs.readFileSync(
   pathModule.join(projectRoot, "data/dreamina-benefit-metadata-fallback.json"),
   "utf8",
 ));
-const entries = normalizeBenefitMetadataResponse(raw);
+const { ret, response } = raw;
+const responseOnly = { ret, response };
+const entries = normalizeBenefitMetadataResponse(responseOnly);
 const index = buildBenefitPriceIndex(entries);
 process.stdout.write(JSON.stringify({
   count: entries.length,
@@ -118,4 +120,25 @@ process.exit(0);
   assert.equal(result.video.creditUnitPrice, 35);
   assert.equal(result.video.unit, "second");
   assert.equal(result.video.resourceId, "generate_video");
+});
+
+test("benefit metadata parser rejects successful envelopes with malformed response metadata", () => {
+  const result = runWithJiti(`
+const { normalizeBenefitMetadataResponse } = await jiti.import(
+  path.join(projectRoot, "server/clients/dreamina/benefit-metadata.ts"),
+);
+try {
+  normalizeBenefitMetadataResponse({ ret: "0", response: "not json" });
+  process.stdout.write(JSON.stringify({ threw: false }));
+} catch (error) {
+  process.stdout.write(JSON.stringify({
+    threw: true,
+    message: error instanceof Error ? error.message : String(error),
+  }));
+}
+process.exit(0);
+`);
+
+  assert.equal(result.threw, true);
+  assert.match(result.message, /metadata format|metadata_list/i);
 });

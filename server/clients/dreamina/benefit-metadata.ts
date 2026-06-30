@@ -137,12 +137,16 @@ function getBenefitMetadataPayload(body: any): Record<string, any> {
 
 export function normalizeBenefitMetadataResponse(body: any): BenefitPriceEntry[] {
   const payload = getBenefitMetadataPayload(body);
-  const ok = isSuccessfulEnvelope(body) || Array.isArray(payload.metadata_list);
+  const hasMetadataList = Array.isArray(payload.metadata_list);
+  const ok = isSuccessfulEnvelope(body) || hasMetadataList;
   if (!ok) {
     throw new Error(`权益元数据查询失败: ${body?.errmsg || body?.message || body?.ret || body?.code || "未知错误"}`);
   }
+  if (isSuccessfulEnvelope(body) && !hasMetadataList) {
+    throw new Error("Invalid benefit metadata format: metadata_list missing or malformed");
+  }
 
-  const metadataList = Array.isArray(payload.metadata_list) ? payload.metadata_list : [];
+  const metadataList = payload.metadata_list;
   const entries: BenefitPriceEntry[] = [];
 
   for (const resource of metadataList) {
