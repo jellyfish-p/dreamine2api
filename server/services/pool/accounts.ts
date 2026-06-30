@@ -2,6 +2,7 @@ import _ from "lodash";
 import { getDb } from "~~/server/repositories/sqlite/database";
 import type { PoolAccountRow } from "~~/server/repositories/sqlite/schema";
 import { getCommerceAccountInfo } from "~~/server/clients/dreamina/account";
+import { getCommerceBenefitMetadata } from "~~/server/clients/dreamina/benefit-metadata";
 import { getCredit, getTokenLiveStatus, getAccountInfo } from "~~/server/clients/dreamina/core";
 import { loginWithEmail } from "~~/server/clients/dreamina/auth";
 import { deriveAccountType, firstString, getStringByPath } from "~~/server/services/pool/account-info";
@@ -153,21 +154,29 @@ export async function refreshAccountCredit(id: number) {
 }
 
 export async function refreshAccountSnapshot(id: number) {
-  const [creditResult, infoResult] = await Promise.allSettled([
+  const [creditResult, infoResult, benefitMetadataResult] = await Promise.allSettled([
     refreshAccountCredit(id),
     fetchAccountInfo(id),
+    refreshAccountBenefitMetadata(id),
   ]);
   const snapshot: {
     id: number;
     credit?: Awaited<ReturnType<typeof refreshAccountCredit>>;
     info?: Awaited<ReturnType<typeof fetchAccountInfo>>;
+    benefit_metadata?: Awaited<ReturnType<typeof refreshAccountBenefitMetadata>>;
     credit_error: string | null;
     info_error: string | null;
-  } = { id, credit_error: null, info_error: null };
+    benefit_metadata_error: string | null;
+  } = { id, credit_error: null, info_error: null, benefit_metadata_error: null };
   if (creditResult.status === "fulfilled") snapshot.credit = creditResult.value;
   else snapshot.credit_error = creditResult.reason?.message || String(creditResult.reason);
   if (infoResult.status === "fulfilled") snapshot.info = infoResult.value;
   else snapshot.info_error = infoResult.reason?.message || String(infoResult.reason);
+  if (benefitMetadataResult.status === "fulfilled") snapshot.benefit_metadata = benefitMetadataResult.value;
+  else {
+    snapshot.benefit_metadata_error =
+      benefitMetadataResult.reason?.message || String(benefitMetadataResult.reason);
+  }
   return snapshot;
 }
 
@@ -312,6 +321,24 @@ export async function fetchAccountInfo(id: number) {
     email: info?.email || row.email,
     live: !!userId,
   };
+}
+
+export async function refreshAccountBenefitMetadata(id: number) {
+  const row = getAccountById(id);
+  if (!row) throw new Error("account not found");
+  const creditProxy = resolveCreditProxy(row.proxy_url);
+  const metadata = await getCommerceBenefitMetadata(row.session_id, { proxyUrl: creditProxy });
+  const ts = now();
+  getDb()
+    .prepare(
+      `UPDATE pool_accounts SET
+        last_benefit_metadata = ?,
+        last_benefit_metadata_at = ?,
+        updated_at = ?
+       WHERE id = ?`
+    )
+    .run(JSON.stringify(metadata), ts, ts, id);
+  return { id, metadata_at: ts, proxy: creditProxy || null };
 }
 
 /**

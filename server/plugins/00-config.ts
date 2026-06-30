@@ -1,6 +1,7 @@
 import { applyConfigToEnv, readAppConfig } from "../config/app-config";
 import { syncTomlToSqlite } from "../config/sync-config";
 import { getDb } from "../repositories/sqlite/database";
+import { getStartupBenefitPriceIndex } from "../services/pool/benefit-metadata-cache";
 import logger from "../utils/logger";
 
 export default defineNitroPlugin(() => {
@@ -12,5 +13,6 @@ export default defineNitroPlugin(() => {
   applyConfigToEnv(config);
   syncTomlToSqlite(config);
   getDb();
+  getStartupBenefitPriceIndex();
   logger.info("Dreamine Nitro backend initialized");
 });

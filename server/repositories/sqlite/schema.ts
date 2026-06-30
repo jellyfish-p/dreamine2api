@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS pool_accounts (
   last_gift_credit INTEGER,
   last_vip_credit INTEGER,
   last_purchase_credit INTEGER,
+  last_benefit_metadata TEXT,
+  last_benefit_metadata_at INTEGER,
   last_check_at INTEGER,
   last_success_at INTEGER,
   fail_count INTEGER NOT NULL DEFAULT 0,
@@ -61,6 +63,8 @@ export type PoolAccountRow = {
   last_gift_credit: number | null;
   last_vip_credit: number | null;
   last_purchase_credit: number | null;
+  last_benefit_metadata: string | null;
+  last_benefit_metadata_at: number | null;
   last_check_at: number | null;
   last_success_at: number | null;
   fail_count: number;
@@ -85,6 +89,8 @@ export type PoolAccountRow = {
 export const MIGRATION_COLUMNS: { column: string; ddl: string }[] = [
   { column: "last_vip_credit", ddl: "INTEGER" },
   { column: "last_purchase_credit", ddl: "INTEGER" },
+  { column: "last_benefit_metadata", ddl: "TEXT" },
+  { column: "last_benefit_metadata_at", ddl: "INTEGER" },
   { column: "email", ddl: "TEXT" },
   { column: "password", ddl: "TEXT" },
   { column: "user_id", ddl: "TEXT" },
