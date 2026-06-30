@@ -8,6 +8,7 @@ import {
   videoJobAcceptedResponse,
   videoJobStatusResponse,
 } from "~~/server/services/media-format";
+import type { CreditCostContext } from "~~/server/services/pool/credit-cost";
 import {
   completeVideoJob,
   createVideoJob,
@@ -21,6 +22,18 @@ import {
   type ActiveSession,
 } from "~~/server/services/pool/session-context";
 import util from "~~/server/utils/util";
+
+function videoCostContext(request: ReturnType<typeof normalizeVideoBody>): CreditCostContext {
+  return {
+    kind: "video",
+    model: request.model || DEFAULT_MODEL,
+    width: request.width,
+    height: request.height,
+    resolution: request.resolution,
+    durationSec: request.durationSec,
+    filePaths: request.filePaths,
+  };
+}
 
 async function runVideoGeneration(
   session: ActiveSession,
@@ -45,8 +58,9 @@ export async function createVideoGeneration(
   body: Record<string, unknown>,
   authorization: string,
 ) {
-  const session = requireActiveSession(authorization);
   const request = normalizeVideoBody(body);
+  const costContext = videoCostContext(request);
+  const session = requireActiveSession(authorization, costContext);
 
   if (request.asyncMode) {
     const requestId = createVideoJob();

@@ -7,6 +7,7 @@ import {
 } from "~~/server/clients/dreamina/images";
 import { ASPECT_RATIOS } from "~~/server/clients/dreamina/consts/common";
 import { imageResultResponse, normalizeImageBody } from "~~/server/services/media-format";
+import type { CreditCostContext } from "~~/server/services/pool/credit-cost";
 import { refreshActiveSessionCredit, requireActiveSession } from "~~/server/services/pool/session-context";
 import util from "~~/server/utils/util";
 
@@ -18,6 +19,20 @@ function resolveImageSize(ratio?: string): { width: number; height: number } {
     statusCode: 400,
     message: `unsupported ratio "${ratio}". supported ratios: ${Object.keys(ASPECT_RATIOS).join(", ")}`,
   });
+}
+
+function imageCostContext(
+  request: ReturnType<typeof normalizeImageBody>,
+  size: { width: number; height: number },
+  operation: "generate" | "edit",
+): CreditCostContext {
+  return {
+    kind: "image",
+    operation,
+    model: request.model || DEFAULT_MODEL,
+    width: size.width,
+    height: size.height,
+  };
 }
 
 async function formatImageResult(urls: string[], responseFormat = "url") {
@@ -32,7 +47,6 @@ export async function createImageGeneration(
   body: Record<string, unknown>,
   authorization: string,
 ) {
-  const session = requireActiveSession(authorization);
   const request = normalizeImageBody(body);
   if (request.imageUrls.length > 0) {
     throw createError({
@@ -42,6 +56,8 @@ export async function createImageGeneration(
   }
 
   const size = resolveImageSize(request.ratio);
+  const costContext = imageCostContext(request, size, "generate");
+  const session = requireActiveSession(authorization, costContext);
   const urls = await generateImages(
     request.model || DEFAULT_MODEL,
     request.prompt,
@@ -62,7 +78,6 @@ export async function createImageEdit(
   body: Record<string, unknown>,
   authorization: string,
 ) {
-  const session = requireActiveSession(authorization);
   const request = normalizeImageBody(body);
   if (request.imageUrls.length === 0) {
     throw createError({ statusCode: 400, message: "at least one input image is required" });
@@ -72,6 +87,8 @@ export async function createImageEdit(
   }
 
   const size = resolveImageSize(request.ratio);
+  const costContext = imageCostContext(request, size, "edit");
+  const session = requireActiveSession(authorization, costContext);
   const urls = await generateImageComposition(
     request.model || DEFAULT_MODEL,
     request.prompt,
