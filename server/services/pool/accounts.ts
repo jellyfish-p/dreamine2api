@@ -103,10 +103,14 @@ export function getAccountById(id: number): PoolAccountRow | undefined {
     | undefined;
 }
 
-export function pickEnabledAccount(): PoolAccountRow | undefined {
-  const rows = getDb()
+export function listEnabledAccounts(): PoolAccountRow[] {
+  return getDb()
     .prepare("SELECT * FROM pool_accounts WHERE enabled = 1 ORDER BY id ASC")
     .all() as PoolAccountRow[];
+}
+
+export function pickEnabledAccount(): PoolAccountRow | undefined {
+  const rows = listEnabledAccounts();
   if (rows.length === 0) return undefined;
   return _.sample(rows);
 }

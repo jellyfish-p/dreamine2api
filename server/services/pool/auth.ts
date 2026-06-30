@@ -1,8 +1,10 @@
 import _ from "lodash";
 import { tokenSplit } from "~~/server/clients/dreamina/core";
 import { getPoolApiKey } from "~~/server/services/pool/settings";
-import { pickEnabledAccount, resolveFromPoolAccount } from "~~/server/services/pool/accounts";
+import { resolveFromPoolAccount } from "~~/server/services/pool/accounts";
 import type { ResolvedSession } from "~~/server/services/pool/accounts";
+import type { CreditCostContext } from "~~/server/services/pool/credit-cost";
+import { pickAccountForCost } from "~~/server/services/pool/scheduler";
 
 function stripBearer(auth?: string): string {
   if (!auth) return "";
@@ -15,11 +17,11 @@ export function isPoolApiKey(auth?: string): boolean {
   return stripBearer(auth) === key;
 }
 
-export function resolveSessions(authorization?: string): ResolvedSession[] {
+export function resolveSessions(authorization?: string, costContext?: CreditCostContext): ResolvedSession[] {
   if (!authorization) return [];
 
   if (isPoolApiKey(authorization)) {
-    const acc = pickEnabledAccount();
+    const acc = pickAccountForCost(costContext);
     if (!acc) return [];
     return [resolveFromPoolAccount(acc)];
   }
@@ -31,6 +33,6 @@ export function resolveSessions(authorization?: string): ResolvedSession[] {
   }));
 }
 
-export function pickOneSession(authorization?: string): ResolvedSession | undefined {
-  return _.sample(resolveSessions(authorization));
+export function pickOneSession(authorization?: string, costContext?: CreditCostContext): ResolvedSession | undefined {
+  return _.sample(resolveSessions(authorization, costContext));
 }

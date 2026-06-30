@@ -1,0 +1,38 @@
+import { sample } from "lodash";
+import type { PoolAccountRow } from "~~/server/repositories/sqlite/schema";
+import { getBenefitPriceIndexForAccount } from "~~/server/services/pool/benefit-metadata-cache";
+import {
+  estimateCreditCost,
+  type CreditCostContext,
+} from "~~/server/services/pool/credit-cost";
+import { listEnabledAccounts } from "~~/server/services/pool/accounts";
+import logger from "~~/server/utils/logger";
+
+export function pickAccountForCost(costContext?: CreditCostContext): PoolAccountRow | undefined {
+  const rows = listEnabledAccounts();
+  if (rows.length === 0) return undefined;
+  if (!costContext) return sample(rows);
+
+  const eligible: PoolAccountRow[] = [];
+
+  for (const row of rows) {
+    if (row.last_total_credit == null) return fallback(rows, "cached credit is missing");
+
+    try {
+      const priceIndex = getBenefitPriceIndexForAccount(row);
+      const estimate = estimateCreditCost(costContext, priceIndex, row.account_type || undefined);
+      if (!estimate) return fallback(rows, "credit cost could not be estimated");
+      if (row.last_total_credit >= estimate.credits) eligible.push(row);
+    } catch (e: any) {
+      return fallback(rows, `credit cost estimation failed: ${e?.message || String(e)}`);
+    }
+  }
+
+  if (eligible.length === 0) return fallback(rows, "no account has enough cached credit");
+  return sample(eligible);
+}
+
+function fallback(rows: PoolAccountRow[], reason: string): PoolAccountRow | undefined {
+  logger.warn(`Pool account scheduler fell back to random enabled account: ${reason}`);
+  return sample(rows);
+}

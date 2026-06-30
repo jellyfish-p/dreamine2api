@@ -1,6 +1,7 @@
 import type { ResolvedSession } from "~~/server/services/pool/accounts";
 import { refreshAccountCredit } from "~~/server/services/pool/accounts";
 import { pickOneSession } from "~~/server/services/pool/auth";
+import type { CreditCostContext } from "~~/server/services/pool/credit-cost";
 import { resolveApiProxy } from "~~/server/services/pool/settings";
 import logger from "~~/server/utils/logger";
 
@@ -12,8 +13,8 @@ export type ActiveSession = {
   accountId?: number;
 };
 
-export function requireActiveSession(authorization?: string): ActiveSession {
-  const picked = pickOneSession(authorization);
+export function requireActiveSession(authorization?: string, costContext?: CreditCostContext): ActiveSession {
+  const picked = pickOneSession(authorization, costContext);
   if (!picked) {
     throw new Error("未提供有效 Authorization，或号池为空。使用 Bearer <sessionid> 或 Bearer <pool_api_key>");
   }
