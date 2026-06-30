@@ -1,6 +1,4 @@
-import fs from "fs";
-import path from "path";
-
+import fallbackBenefitMetadata from "~~/data/dreamina-benefit-metadata-fallback.json";
 import {
   buildBenefitPriceIndex,
   normalizeBenefitMetadataResponse,
@@ -9,11 +7,6 @@ import {
 import type { PoolAccountRow } from "~~/server/repositories/sqlite/schema";
 import logger from "~~/server/utils/logger";
 import util from "~~/server/utils/util";
-
-const FALLBACK_BENEFIT_METADATA_PATH = path.resolve(
-  process.cwd(),
-  "data/dreamina-benefit-metadata-fallback.json"
-);
 
 let startupBenefitPriceIndex: BenefitPriceIndex | null = null;
 
@@ -33,13 +26,7 @@ export function parseBenefitMetadataToIndex(raw?: string | null): BenefitPriceIn
 export function getStartupBenefitPriceIndex(): BenefitPriceIndex {
   if (startupBenefitPriceIndex) return startupBenefitPriceIndex;
 
-  const raw = fs.readFileSync(FALLBACK_BENEFIT_METADATA_PATH, "utf8");
-  const parsed = util.ignoreJSONParse(raw);
-  if (!parsed || typeof parsed !== "object") {
-    throw new Error(`Invalid fallback benefit metadata JSON: ${FALLBACK_BENEFIT_METADATA_PATH}`);
-  }
-
-  const entries = normalizeBenefitMetadataResponse(parsed);
+  const entries = normalizeBenefitMetadataResponse(fallbackBenefitMetadata);
   startupBenefitPriceIndex = buildBenefitPriceIndex(entries);
   logger.debug(`启动权益价格索引已加载: ${entries.length}`);
   return startupBenefitPriceIndex;

@@ -121,6 +121,37 @@ process.exit(0);
   assert.equal(result.video.creditUnitPrice, 35);
 });
 
+test("startup benefit metadata cache does not depend on runtime cwd data folder", () => {
+  const result = runWithJiti(`
+const { mkdtempSync, rmSync, symlinkSync } = await import("node:fs");
+const { tmpdir } = await import("node:os");
+const emptyCwd = mkdtempSync(path.join(tmpdir(), "benefit-metadata-cwd-"));
+try {
+  symlinkSync(
+    path.join(projectRoot, "node_modules"),
+    path.join(emptyCwd, "node_modules"),
+    process.platform === "win32" ? "junction" : "dir",
+  );
+  process.chdir(emptyCwd);
+  const { getStartupBenefitPriceIndex } = await jiti.import(
+    path.join(projectRoot, "server/services/pool/benefit-metadata-cache.ts"),
+  );
+  const index = getStartupBenefitPriceIndex();
+  process.stdout.write(JSON.stringify({
+    gpt: index.image_basic_gpt_image_v2?.[0],
+    video: index.seedance_20_fast_720p_output?.[0],
+  }));
+} finally {
+  process.chdir(projectRoot);
+  rmSync(emptyCwd, { recursive: true, force: true });
+}
+process.exit(0);
+`);
+
+  assert.equal(result.gpt.creditUnitPrice, 3);
+  assert.equal(result.video.creditUnitPrice, 35);
+});
+
 test("benefit metadata cache exports parser for committed fallback raw JSON", () => {
   const result = runWithJiti(`
 const cacheModule = await jiti.import(
