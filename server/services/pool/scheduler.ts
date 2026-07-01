@@ -1,4 +1,4 @@
-import { sample } from "lodash";
+import _ from "lodash";
 import type { PoolAccountRow } from "~~/server/repositories/sqlite/schema";
 import { getBenefitPriceIndexesForAccount } from "~~/server/services/pool/benefit-metadata-cache";
 import {
@@ -11,7 +11,7 @@ import logger from "~~/server/utils/logger";
 export function pickAccountForCost(costContext?: CreditCostContext): PoolAccountRow | undefined {
   const rows = listEnabledAccounts();
   if (rows.length === 0) return undefined;
-  if (!costContext) return sample(rows);
+  if (!costContext) return _.sample(rows);
 
   const eligible: PoolAccountRow[] = [];
   let hasKnownCredit = false;
@@ -34,7 +34,7 @@ export function pickAccountForCost(costContext?: CreditCostContext): PoolAccount
   if (!hasKnownCredit) return fallback(rows, "cached credit is missing");
   if (!hasKnownCreditEstimate) return fallback(rows, "credit cost could not be estimated");
   if (eligible.length === 0) return fallback(rows, "no account has enough cached credit");
-  return sample(eligible);
+  return _.sample(eligible);
 }
 
 function estimateCreditCostForAccount(row: PoolAccountRow, costContext: CreditCostContext) {
@@ -47,5 +47,5 @@ function estimateCreditCostForAccount(row: PoolAccountRow, costContext: CreditCo
 
 function fallback(rows: PoolAccountRow[], reason: string): PoolAccountRow | undefined {
   logger.warn(`Pool account scheduler fell back to random enabled account: ${reason}`);
-  return sample(rows);
+  return _.sample(rows);
 }
