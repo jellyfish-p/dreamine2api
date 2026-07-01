@@ -35,6 +35,98 @@ export function getModel(model: string) {
   return resolved || DEFAULT_MODEL;
 }
 
+type DreaminaImageRecord = Record<string, any>;
+
+export type DreaminaImageCompletion = {
+  expectedCount: number;
+  successCount: number;
+  failedCount: number;
+  completedCount: number;
+  complete: boolean;
+};
+
+export type DreaminaFailedImageResult = {
+  id: string;
+  code: number | string;
+  message: string;
+};
+
+export function getDreaminaImageUrls(itemList: any[] = []): string[] {
+  return itemList
+    .map((item) =>
+      item?.image?.large_images?.[0]?.image_url ||
+      item?.common_attr?.cover_url ||
+      item?.image_url ||
+      item?.url ||
+      null
+    )
+    .filter((url): url is string => typeof url === "string" && url.length > 0);
+}
+
+export function getDreaminaFailedImageResults(failedItemList: any[] = []): DreaminaFailedImageResult[] {
+  return failedItemList.map((item) => ({
+    id: item?.common_attr?.id || item?.common_attr?.effect_id || "",
+    code: item?.gen_result_data?.result_code ?? item?.common_attr?.status ?? "",
+    message: item?.gen_result_data?.result_msg || item?.fail_msg || item?.fail_code || "unknown",
+  }));
+}
+
+function positiveNumber(value: unknown): number {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : 0;
+}
+
+export function getDreaminaImageCompletion(
+  record: DreaminaImageRecord,
+  fallbackExpectedCount = 4,
+): DreaminaImageCompletion {
+  const successCount = Array.isArray(record?.item_list) ? record.item_list.length : 0;
+  const failedCount = Array.isArray(record?.failed_item_list) ? record.failed_item_list.length : 0;
+  const preGenCount = Array.isArray(record?.pre_gen_item_ids) ? record.pre_gen_item_ids.length : 0;
+  const expectedCount = preGenCount || positiveNumber(record?.total_image_count) || fallbackExpectedCount;
+  const listedCompletedCount = successCount + failedCount;
+  const completedCount = Math.max(listedCompletedCount, positiveNumber(record?.finished_image_count));
+  const hasTerminalStatus = record?.status === 10 || record?.status === 50;
+  const hasFinishTime = positiveNumber(record?.task?.finish_time || record?.finish_time) > 0;
+
+  return {
+    expectedCount,
+    successCount,
+    failedCount,
+    completedCount,
+    complete:
+      hasTerminalStatus ||
+      completedCount >= expectedCount ||
+      (hasFinishTime && completedCount > 0),
+  };
+}
+
+export function ensureDreaminaImageUrls(
+  imageUrls: string[],
+  record: DreaminaImageRecord,
+  context: string,
+): string[] {
+  if (imageUrls.length > 0) return imageUrls;
+  if (record?.fail_code === "2038") throw new APIException(EX.API_CONTENT_FILTERED);
+
+  const failed = getDreaminaFailedImageResults(record?.failed_item_list);
+  const reason = failed
+    .map((item) => [item.id, item.message].filter(Boolean).join(": "))
+    .filter(Boolean)
+    .join("; ");
+
+  throw new APIException(
+    EX.API_IMAGE_GENERATION_FAILED,
+    `${context}失败: ${reason || record?.fail_msg || record?.fail_code || "未返回可用图片"}`,
+  );
+}
+
+function logDreaminaFailedImages(context: string, failedItemList: any[] = []) {
+  const failed = getDreaminaFailedImageResults(failedItemList);
+  if (failed.length === 0) return;
+  logger.warn(`${context}部分图片生成失败: ${JSON.stringify(failed)}`);
+}
+
 // 计算文件的CRC32值
 function calculateCRC32(buffer: ArrayBuffer): string {
   const crcTable: number[] = [];
@@ -468,7 +560,7 @@ export async function generateImageComposition(
 
   logger.info(`图生图任务已提交，history_id: ${historyId}，等待生成完成...`);
 
-  let status = 20, failCode: string | undefined, item_list: any[] = [];
+  let status = 20, failCode: string | undefined, item_list: any[] = [], finalTaskInfo: any = null;
   let pollCount = 0;
   const maxPollCount = 600;
 
@@ -490,17 +582,20 @@ export async function generateImageComposition(
     if (!result[historyId])
       throw new APIException(EX.API_IMAGE_GENERATION_FAILED, "记录不存在");
 
-    status = result[historyId].status;
-    failCode = result[historyId].fail_code;
-    item_list = result[historyId].item_list || [];
+    const taskInfo = result[historyId];
+    finalTaskInfo = taskInfo;
+    status = taskInfo.status;
+    failCode = taskInfo.fail_code;
+    item_list = taskInfo.item_list || [];
+    const completion = getDreaminaImageCompletion(taskInfo, 1);
 
-    if (status === 30) {
+    if (status === 30 && completion.successCount === 0) {
       logger.info(`图生图失败: status=${status}, failCode=${failCode || 'none'}`);
       break;
     }
 
-    if (item_list.length > 0) {
-      logger.info(`图生图完成: 状态=${status}, 已生成 ${item_list.length} 张图片`);
+    if (completion.complete) {
+      logger.info(`图生图完成: 状态=${status}, 已生成 ${completion.successCount} 张图片，失败 ${completion.failedCount} 张`);
       break;
     }
 
@@ -513,18 +608,20 @@ export async function generateImageComposition(
     logger.warn(`图生图超时: 轮询了 ${pollCount} 次，当前状态: ${status}，已生成图片数: ${item_list.length}`);
   }
 
-  if (status === 30) {
+  if (status === 30 && item_list.length === 0) {
     if (failCode === '2038')
       throw new APIException(EX.API_CONTENT_FILTERED);
     else
       throw new APIException(EX.API_IMAGE_GENERATION_FAILED, `图生图失败，错误代码: ${failCode}`);
   }
 
-  const resultImageUrls = item_list.map((item) => {
-    if(!item?.image?.large_images?.[0]?.image_url)
-      return item?.common_attr?.cover_url || null;
-    return item.image.large_images[0].image_url;
-  }).filter(url => url !== null);
+  const finalRecord = finalTaskInfo || { status, fail_code: failCode, item_list };
+  logDreaminaFailedImages("图生图", finalRecord.failed_item_list || []);
+  const resultImageUrls = ensureDreaminaImageUrls(
+    getDreaminaImageUrls(finalRecord.item_list || []),
+    finalRecord,
+    "图生图",
+  );
 
   logger.info(`图生图结果: 成功生成 ${resultImageUrls.length} 张图片`);
   return resultImageUrls;
@@ -667,10 +764,11 @@ export async function generateImages(
     throw new APIException(EX.API_IMAGE_GENERATION_FAILED, "记录ID不存在");
 
   const maxPollCount = 900;
+  const expectedImageCount = getDreaminaImageCompletion(aigc_data, 4).expectedCount;
 
   const poller = new SmartPoller({
     maxPollCount,
-    expectedItemCount: 4,
+    expectedItemCount: expectedImageCount,
     type: 'image'
   });
 
@@ -691,14 +789,18 @@ export async function generateImages(
     const taskInfo = response[historyId];
     const currentStatus = taskInfo.status;
     const currentFailCode = taskInfo.fail_code;
-    const currentItemList = taskInfo.item_list || [];
     const finishTime = taskInfo.task?.finish_time || 0;
+    const completion = getDreaminaImageCompletion(taskInfo, expectedImageCount);
+    const statusForPolling =
+      currentStatus === 30 && completion.completedCount >= completion.expectedCount
+        ? 20
+        : currentStatus;
 
     return {
       status: {
-        status: currentStatus,
+        status: statusForPolling,
         failCode: currentFailCode,
-        itemCount: currentItemList.length,
+        itemCount: completion.completedCount,
         finishTime,
         historyId
       } as PollingStatus,
@@ -708,192 +810,19 @@ export async function generateImages(
 
   const item_list = finalTaskInfo.item_list || [];
 
-  const imageUrls = item_list.map((item: any, index: number) => {
-    let imageUrl: string | null = null;
-
-    if (item?.image?.large_images?.[0]?.image_url) {
-      imageUrl = item.image.large_images[0].image_url;
-      logger.debug(`图片 ${index + 1}: 使用 large_images URL`);
-    } else if (item?.common_attr?.cover_url) {
-      imageUrl = item.common_attr.cover_url;
-      logger.debug(`图片 ${index + 1}: 使用 cover_url`);
-    } else if (item?.image_url) {
-      imageUrl = item.image_url;
-      logger.debug(`图片 ${index + 1}: 使用 image_url`);
-    } else if (item?.url) {
-      imageUrl = item.url;
-      logger.debug(`图片 ${index + 1}: 使用 url`);
-    } else {
-      logger.warn(`图片 ${index + 1}: 无法提取URL，item结构: ${JSON.stringify(item, null, 2)}`);
-    }
-
-    return imageUrl;
-  }).filter((url: string | null) => url !== null) as string[];
+  logDreaminaFailedImages("图像生成", finalTaskInfo.failed_item_list || []);
+  const imageUrls = ensureDreaminaImageUrls(
+    getDreaminaImageUrls(item_list),
+    finalTaskInfo,
+    "图像生成",
+  );
 
   logger.info(`图像生成完成: 成功生成 ${imageUrls.length} 张图片，总耗时 ${pollingResult.elapsedTime} 秒，最终状态: ${pollingResult.status}`);
 
-  if (imageUrls.length === 0) {
-    logger.error(`图像生成异常: item_list有 ${item_list.length} 个项目，但无法提取任何图片URL`);
-    logger.error(`完整的item_list数据: ${JSON.stringify(item_list, null, 2)}`);
-  }
-
   return imageUrls;
-}
-
-/**
- * 通过submit_id获取生成的图片历史记录
- * 
- * @param submitIds 提交ID数组
- * @param refreshToken 用于刷新access_token的refresh_token
- * @returns 图片生成历史记录
- */
-export async function getHistoryBySubmitIds(
-  submitIds: string[],
-  refreshToken: string
-) {
-  logger.info(`通过submit_ids获取历史记录: ${submitIds.join(', ')}`);
-
-  const result = await request("post", "/mweb/v1/get_history_by_ids", refreshToken, {
-    data: {
-      submit_ids: submitIds,
-    },
-  });
-
-  const histories: Array<{
-    submitId: string;
-    status: number;
-    failCode?: string;
-    failMsg?: string;
-    generateType: number;
-    historyRecordId?: string;
-    finishTime?: number;
-    totalImageCount: number;
-    finishedImageCount: number;
-    images: Array<{
-      id: string;
-      imageUrl: string;
-      width: number;
-      height: number;
-      format: string;
-      coverUrlMap: Record<string, string>;
-      description: string;
-      referencePrompt: string;
-    }>;
-  }> = [];
-
-  for (const submitId of submitIds) {
-    const record = result[submitId];
-    if (!record) {
-      logger.warn(`submit_id ${submitId} 的记录不存在`);
-      continue;
-    }
-
-    const itemList = record.item_list || [];
-    const images = itemList.map((item: any) => {
-      const largeImage = item?.image?.large_images?.[0];
-      return {
-        id: item?.common_attr?.id || '',
-        imageUrl: largeImage?.image_url || item?.common_attr?.cover_url || '',
-        width: largeImage?.width || item?.common_attr?.cover_width || 0,
-        height: largeImage?.height || item?.common_attr?.cover_height || 0,
-        format: largeImage?.format || item?.image?.format || 'jpeg',
-        coverUrlMap: item?.common_attr?.cover_url_map || {},
-        description: item?.common_attr?.description || '',
-        referencePrompt: item?.aigc_image_params?.reference_prompt || '',
-      };
-    });
-
-    histories.push({
-      submitId,
-      status: record.status || 0,
-      failCode: record.fail_code,
-      failMsg: record.fail_msg,
-      generateType: record.generate_type || 1,
-      historyRecordId: record.history_record_id,
-      finishTime: record.finish_time,
-      totalImageCount: record.total_image_count || 0,
-      finishedImageCount: record.finished_image_count || 0,
-      images,
-    });
-
-    logger.info(`submit_id ${submitId}: 状态=${record.status}, 已生成=${images.length}张图片`);
-  }
-
-  return histories;
-}
-
-/**
- * 轮询等待submit_id对应的图片生成完成
- * 
- * @param submitId 提交ID
- * @param refreshToken 用于刷新access_token的refresh_token
- * @param options 轮询选项
- * @returns 生成的图片URL数组
- */
-export async function waitForImageGeneration(
-  submitId: string,
-  refreshToken: string,
-  options: {
-    maxPollCount?: number;
-    pollInterval?: number;
-    expectedImageCount?: number;
-  } = {}
-) {
-  const { maxPollCount = 600, pollInterval = 1000, expectedImageCount = 4 } = options;
-  
-  logger.info(`开始轮询等待图片生成: submit_id=${submitId}, 预期图片数=${expectedImageCount}`);
-
-  let pollCount = 0;
-  
-  while (pollCount < maxPollCount) {
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
-    pollCount++;
-
-    const histories = await getHistoryBySubmitIds([submitId], refreshToken);
-    const history = histories[0];
-
-    if (!history) {
-      logger.warn(`轮询第${pollCount}次: submit_id ${submitId} 记录不存在`);
-      continue;
-    }
-
-    // 状态30表示失败
-    if (history.status === 30) {
-      logger.error(`图片生成失败: status=${history.status}, failCode=${history.failCode}, failMsg=${history.failMsg}`);
-      if (history.failCode === '2038') {
-        throw new APIException(EX.API_CONTENT_FILTERED);
-      }
-      throw new APIException(EX.API_IMAGE_GENERATION_FAILED, `生成失败: ${history.failMsg || history.failCode}`);
-    }
-
-    // 状态50表示完成
-    if (history.status === 50 || history.images.length >= expectedImageCount) {
-      logger.info(`图片生成完成: 状态=${history.status}, 生成了${history.images.length}张图片`);
-      return history.images.map(img => img.imageUrl).filter(url => url);
-    }
-
-    // 每30秒输出一次进度
-    if (pollCount % 30 === 0) {
-      logger.info(`轮询进度: 第${pollCount}次, 状态=${history.status}, 已生成=${history.images.length}/${expectedImageCount}张图片`);
-    }
-  }
-
-  logger.warn(`图片生成超时: 轮询了${pollCount}次`);
-  
-  // 超时后返回已有的图片
-  const histories = await getHistoryBySubmitIds([submitId], refreshToken);
-  const history = histories[0];
-  if (history && history.images.length > 0) {
-    logger.info(`超时但有部分图片生成: ${history.images.length}张`);
-    return history.images.map(img => img.imageUrl).filter(url => url);
-  }
-
-  throw new APIException(EX.API_IMAGE_GENERATION_FAILED, '图片生成超时');
 }
 
 export default {
   generateImages,
   generateImageComposition,
-  getHistoryBySubmitIds,
-  waitForImageGeneration,
 };

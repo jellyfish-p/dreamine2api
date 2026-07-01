@@ -3,7 +3,6 @@ import {
   DEFAULT_MODEL,
   generateImageComposition,
   generateImages,
-  getHistoryBySubmitIds,
 } from "~~/server/clients/dreamina/images";
 import { ASPECT_RATIOS } from "~~/server/clients/dreamina/consts/common";
 import { imageResultResponse, normalizeImageBody } from "~~/server/services/media-format";
@@ -112,19 +111,4 @@ export async function createImageComposition(
   authorization: string,
 ) {
   return createImageEdit(body, authorization);
-}
-
-export async function getImageHistory(body: Record<string, unknown>, authorization: string) {
-  const session = requireActiveSession(authorization);
-  const submitIds = body.submit_ids;
-  if (!Array.isArray(submitIds) || submitIds.length === 0) {
-    throw createError({ statusCode: 400, message: "submit_ids must be a non-empty array" });
-  }
-  if (submitIds.length > 20) {
-    throw createError({ statusCode: 400, message: "at most 20 submit_ids are supported" });
-  }
-  return {
-    created: util.unixTimestamp(),
-    data: await getHistoryBySubmitIds(submitIds.map(String), session.sessionId),
-  };
 }
