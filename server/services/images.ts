@@ -105,10 +105,3 @@ export async function createImageEdit(
   await refreshActiveSessionCredit(session);
   return formatImageResult(urls, request.responseFormat);
 }
-
-export async function createImageComposition(
-  body: Record<string, unknown>,
-  authorization: string,
-) {
-  return createImageEdit(body, authorization);
-}

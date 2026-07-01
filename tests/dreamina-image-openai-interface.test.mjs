@@ -43,11 +43,13 @@ ${source}
   return JSON.parse(result.stdout);
 }
 
-test("public image routes expose OpenAI-compatible endpoints without history", () => {
+test("public image routes expose only strict OpenAI-compatible endpoints", () => {
   assert.equal(fs.existsSync(path.join(projectRoot, "server/routes/v1/images/generations.post.ts")), true);
   assert.equal(fs.existsSync(path.join(projectRoot, "server/routes/v1/images/edits.post.ts")), true);
-  assert.equal(fs.existsSync(path.join(projectRoot, "server/routes/v1/images/compositions.post.ts")), true);
+  assert.equal(fs.existsSync(path.join(projectRoot, "server/routes/v1/images/compositions.post.ts")), false);
   assert.equal(fs.existsSync(path.join(projectRoot, "server/routes/v1/images/history.post.ts")), false);
+
+  assert.equal(read("README.md").includes("/compositions"), false);
 
   const serviceSource = read("server/services/images.ts");
   assert.equal(serviceSource.includes("getImageHistory"), false);

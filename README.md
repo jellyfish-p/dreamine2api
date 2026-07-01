@@ -52,7 +52,7 @@ REST：`/api/admin/*`（Bearer 管理密钥）
 与原先一致（由 `src/` 业务逻辑经 Nitro 中间件转发）：
 
 - `GET /v1/models`
-- `POST /v1/images/generations`、`/edits`、`/compositions`
+- `POST /v1/images/generations`、`/edits`
 - `POST /v1/videos/generations`，`GET /v1/videos/{request_id}`
 - `Authorization: Bearer <sessionid>` 或 `Bearer <pool.api_key>`
 

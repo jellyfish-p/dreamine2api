@@ -2,7 +2,7 @@
 
 ## Goal
 
-Expose image generation, edits, and compositions as OpenAI-compatible synchronous image APIs. Dreamina task submission, `submit_id`, `history_id`, `get_history_by_ids`, polling, partial failures, and retry-related details stay fully internal to the server.
+Expose image generation and edits as OpenAI-compatible synchronous image APIs. Dreamina task submission, `submit_id`, `history_id`, `get_history_by_ids`, polling, partial failures, and retry-related details stay fully internal to the server.
 
 Clients should not need to call a history endpoint, inspect Dreamina statuses, or handle mixed success and failure lists.
 
@@ -12,10 +12,10 @@ Keep these OpenAI-compatible endpoints:
 
 - `POST /v1/images/generations`
 - `POST /v1/images/edits`
+
+Remove customer-visible non-standard image endpoints:
+
 - `POST /v1/images/compositions`
-
-Remove the customer-visible image history endpoint:
-
 - `POST /v1/images/history`
 
 The generated response shape remains OpenAI-style:

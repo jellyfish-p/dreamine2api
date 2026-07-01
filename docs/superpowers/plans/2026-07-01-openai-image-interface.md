@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make image generation, edits, and compositions behave as synchronous OpenAI-compatible APIs while hiding Dreamina history polling and partial failures from clients.
+**Goal:** Make image generation and edits behave as synchronous OpenAI-compatible APIs while hiding Dreamina history polling and partial failures from clients.
 
 **Architecture:** Keep route handlers thin and keep OpenAI response formatting in `server/services/images.ts`. Add Dreamina-specific result counting, URL extraction, and no-result error handling inside `server/clients/dreamina/images.ts`, then delete the public history route.
 
@@ -15,6 +15,7 @@
 - Modify `server/clients/dreamina/images.ts`: add focused helpers for Dreamina image record parsing, use failed item counts during polling, and throw stable errors when no usable image URLs are returned.
 - Modify `server/services/images.ts`: remove the customer-facing `getImageHistory` service export and its Dreamina history import.
 - Delete `server/routes/v1/images/history.post.ts`: remove public history endpoint.
+- Delete `server/routes/v1/images/compositions.post.ts`: remove non-standard public composition endpoint.
 - Create `tests/dreamina-image-openai-interface.test.mjs`: verify route removal, mixed-result completion helpers, partial-success URL extraction, zero-success error behavior, and service response-format preservation.
 
 ### Task 1: Add Failing OpenAI Image Interface Tests
@@ -73,7 +74,7 @@ ${source}
 test("public image routes expose OpenAI-compatible endpoints without history", () => {
   assert.equal(fs.existsSync(path.join(projectRoot, "server/routes/v1/images/generations.post.ts")), true);
   assert.equal(fs.existsSync(path.join(projectRoot, "server/routes/v1/images/edits.post.ts")), true);
-  assert.equal(fs.existsSync(path.join(projectRoot, "server/routes/v1/images/compositions.post.ts")), true);
+  assert.equal(fs.existsSync(path.join(projectRoot, "server/routes/v1/images/compositions.post.ts")), false);
   assert.equal(fs.existsSync(path.join(projectRoot, "server/routes/v1/images/history.post.ts")), false);
 
   const serviceSource = read("server/services/images.ts");
@@ -460,7 +461,7 @@ Expected: only pre-existing unrelated files remain unstaged, or no changes if im
 
 Spec coverage:
 
-- Public OpenAI-compatible image endpoints stay: Task 1 route test and Task 4 route removal keep generations, edits, and compositions.
+- Public OpenAI-compatible image endpoints stay: Task 1 route test and Task 4 route removal keep generations and edits while removing non-standard compositions.
 - Public history endpoint is removed: Task 1 and Task 4.
 - Dreamina polling is internal and counts failed items: Task 2 and Task 3.
 - Partial success returns only successful images: Task 1 helper test and Task 3 use `getDreaminaImageUrls`.
