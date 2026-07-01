@@ -1,36 +1,40 @@
-# Build stage
-FROM node:18-alpine AS builder
+# syntax=docker/dockerfile:1
+
+FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Install dependencies
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates g++ make python3 \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY package*.json ./
 RUN npm ci
 
-# Copy source files
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine AS production
+FROM node:22-bookworm-slim AS production
 
 WORKDIR /app
 
-# Copy built files and dependencies
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/configs ./configs
-COPY --from=builder /app/public ./public
+ENV NODE_ENV=production \
+  NITRO_HOST=0.0.0.0 \
+  NITRO_PORT=5200 \
+  PORT=5200
 
-# Expose port
+COPY --from=builder --chown=node:node /app/.output ./.output
+COPY --from=builder --chown=node:node /app/config.toml ./config.toml
+COPY --from=builder --chown=node:node /app/data ./data
+
+RUN mkdir -p logs \
+  && chown -R node:node /app
+
+USER node
+
 EXPOSE 5200
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:5200/ping || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:5200/ping').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-# Start the application
-CMD ["node", "--enable-source-maps", "--no-node-snapshot", "dist/index.js"]
+CMD ["node", ".output/server/index.mjs"]
