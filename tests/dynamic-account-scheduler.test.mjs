@@ -272,3 +272,38 @@ test("auth and session context pass credit cost context into pool account schedu
     "requireActiveSession should pass cost context through to pickOneSession",
   );
 });
+
+test("auth rejects direct bearer session ids while keeping pool api key access", () => {
+  const result = runWithTempDb(`
+const { addAccount } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/accounts.ts"),
+);
+const { setPoolApiKey } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/settings.ts"),
+);
+const { resolveSessions } = await jiti.import(
+  path.join(projectRoot, "server/services/pool/auth.ts"),
+);
+
+setPoolApiKey("pool-key");
+addAccount("pooled-session", "pooled");
+
+const directSessions = resolveSessions("Bearer direct-session");
+const poolSessions = resolveSessions("Bearer pool-key");
+
+process.stdout.write(JSON.stringify({
+  directCount: directSessions.length,
+  poolCount: poolSessions.length,
+  poolSessionId: poolSessions[0]?.sessionId,
+  poolFromPool: poolSessions[0]?.fromPool,
+}));
+process.exit(0);
+`);
+
+  assert.deepEqual(result, {
+    directCount: 0,
+    poolCount: 1,
+    poolSessionId: "pooled-session",
+    poolFromPool: true,
+  });
+});

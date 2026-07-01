@@ -618,15 +618,6 @@ export function checkResult(result: AxiosResponse) {
   });
 }
 
-/**
- * Token切分
- *
- * @param authorization 认证字符串
- */
-export function tokenSplit(authorization: string) {
-  return authorization.replace("Bearer ", "").split(",");
-}
-
 // 海外站 Passport 域名 (account/info 等 passport 端点在此域名, 非 dreamina-api)
 const PASSPORT_API_URL = "https://login-row.www.capcut.com";
 

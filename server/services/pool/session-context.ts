@@ -16,7 +16,7 @@ export type ActiveSession = {
 export function requireActiveSession(authorization?: string, costContext?: CreditCostContext): ActiveSession {
   const picked = pickOneSession(authorization, costContext);
   if (!picked) {
-    throw new Error("未提供有效 Authorization，或号池为空。使用 Bearer <sessionid> 或 Bearer <pool_api_key>");
+    throw new Error("未提供有效 Authorization，或号池为空。使用 Bearer <pool_api_key>");
   }
   return {
     sessionId: picked.sessionId,

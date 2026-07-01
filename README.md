@@ -49,12 +49,14 @@ REST：`/api/admin/*`（Bearer 管理密钥）
 
 ## OpenAI 兼容 API
 
-与原先一致（由 `src/` 业务逻辑经 Nitro 中间件转发）：
+由 Nitro 路由提供：
 
 - `GET /v1/models`
 - `POST /v1/images/generations`、`/edits`
 - `POST /v1/videos/generations`，`GET /v1/videos/{request_id}`
-- `Authorization: Bearer <sessionid>` 或 `Bearer <pool.api_key>`
+- `Authorization: Bearer <pool.api_key>`
+
+外部 OpenAI 兼容接口仅接受 `pool.api_key`。直接传入 Dreamina `sessionid` 的旧兼容方式已移除；请在管理面板导入账号，由号池自动选择可用 session。
 
 旧版 HTTP 管理接口 `GET/POST /pool/*` 仍可用（需 `pool.api_key`）。
 
@@ -85,4 +87,4 @@ npm run legacy:build && npm run legacy:start
 
 ## 模型列表
 
-见 `src/lib/pool/model-catalog.ts`；抓取脚本：`npm run scrape:models` 等。
+见 `server/services/pool/model-catalog.ts`；抓取脚本：`npm run scrape:models` 等。

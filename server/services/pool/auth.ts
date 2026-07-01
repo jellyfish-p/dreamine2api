@@ -1,5 +1,4 @@
 import _ from "lodash";
-import { tokenSplit } from "~~/server/clients/dreamina/core";
 import { getPoolApiKey } from "~~/server/services/pool/settings";
 import { resolveFromPoolAccount } from "~~/server/services/pool/accounts";
 import type { ResolvedSession } from "~~/server/services/pool/accounts";
@@ -26,11 +25,7 @@ export function resolveSessions(authorization?: string, costContext?: CreditCost
     return [resolveFromPoolAccount(acc)];
   }
 
-  const tokens = tokenSplit(authorization);
-  return tokens.map((sessionId) => ({
-    sessionId,
-    fromPool: false,
-  }));
+  return [];
 }
 
 export function pickOneSession(authorization?: string, costContext?: CreditCostContext): ResolvedSession | undefined {
