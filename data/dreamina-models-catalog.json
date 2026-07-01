@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-06-30T15:05:10.097Z",
+  "built_at": "2026-07-01T04:15:22.131Z",
   "note": "public_id for /v1/models and request model; maps to model_req_key",
   "account_snapshot": {
     "fetched_at": "2026-06-26T09:07:42.768Z",
@@ -13,7 +13,8 @@
       "dreamina_seedance_40",
       "dreamina_seedance_40_pro",
       "dreamina_ic_generate_video_model_vgfm_3.5_pro",
-      "dreamina_ic_generate_video_model_vgfm_3.0_pro"
+      "dreamina_ic_generate_video_model_vgfm_3.0_pro",
+      "dreamina_ic_generate_video_model_vgfm_3.0_fast"
     ]
   },
   "models": [
@@ -156,6 +157,23 @@
       "model_name": "Dreamina Seedance 1.5 Pro",
       "model_tip": "Generates videos with synced, natural sound.",
       "options": [
+        "input_media_type",
+        "resolution",
+        "frames",
+        "fps",
+        "video_aspect_ratio"
+      ],
+      "upstream_seen": true
+    },
+    {
+      "public_id": "seedance-1.0-fast",
+      "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_fast",
+      "model_type": "video",
+      "display_name": "Seedance 1.0 Fast",
+      "model_name": "Dreamina Seedance 1.0 Fast",
+      "model_tip": "Film-level performance, faster and more credit-efficient.",
+      "options": [
+        "multi_frames",
         "input_media_type",
         "resolution",
         "frames",

@@ -167,6 +167,19 @@
       ]
     },
     {
+      "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_fast",
+      "model_name": "Dreamina Seedance 1.0 Fast",
+      "model_tip": "Film-level performance, faster and more credit-efficient.",
+      "options": [
+        "multi_frames",
+        "input_media_type",
+        "resolution",
+        "frames",
+        "fps",
+        "video_aspect_ratio"
+      ]
+    },
+    {
       "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_pro",
       "model_name": "Dreamina Seedance 1.0",
       "model_tip": "",

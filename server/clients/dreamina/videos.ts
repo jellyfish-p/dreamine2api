@@ -8,7 +8,7 @@ import { getCredit, receiveCredit, request, type RequestProxyOptions } from "./c
 import logger from "~~/server/utils/logger";
 import { SmartPoller } from "~~/server/clients/dreamina/smart-poller";
 import type { PollingStatus } from "~~/server/clients/dreamina/smart-poller";
-import { DEFAULT_ASSISTANT_ID, DRAFT_VERSION } from "~~/server/clients/dreamina/consts/common";
+import { DEFAULT_ASSISTANT_ID, DRAFT_VERSION, WEB_VERSION } from "~~/server/clients/dreamina/consts/common";
 import { resolveModelReqKey as resolvePublicModel } from "~~/server/services/pool/model-catalog";
 import {
   adaptVideoGenerationInput,
@@ -345,6 +345,270 @@ async function uploadImageForVideo(imageUrl: string, refreshToken: string): Prom
   }
 }
 
+type VideoFrameImage = {
+  format: string;
+  height: number;
+  id: string;
+  image_uri: string;
+  name: string;
+  platform_type: number;
+  source_from: string;
+  type: string;
+  uri: string;
+  width: number;
+};
+
+type BuildDreaminaVideoGenerationRequestInput = {
+  model: string;
+  prompt: string;
+  adaptedInput: ReturnType<typeof adaptVideoGenerationInput>;
+  firstFrameImage?: VideoFrameImage;
+  endFrameImage?: VideoFrameImage;
+  submitId?: string;
+  submitGroupId?: string;
+  draftId?: string;
+  componentId?: string;
+  nowMs?: number;
+  seed?: number;
+  generateId?: string;
+};
+
+function videoDurationSeconds(adaptedInput: ReturnType<typeof adaptVideoGenerationInput>): number {
+  return Math.max(1, Math.round(adaptedInput.durationMs / 1000));
+}
+
+function buildVideoCommerceInfoList(
+  model: string,
+  adaptedInput: ReturnType<typeof adaptVideoGenerationInput>,
+) {
+  const amount = videoDurationSeconds(adaptedInput);
+  const videoBenefitTypes = resolveVideoBenefitTypes(
+    {
+      kind: "video",
+      model,
+      width: adaptedInput.width,
+      height: adaptedInput.height,
+      resolution: adaptedInput.resolution,
+      durationSec: amount,
+      filePaths: adaptedInput.filePaths,
+    },
+    model,
+    adaptedInput,
+  ) || ["basic_video_operation_vgfm_v_three"];
+
+  return videoBenefitTypes.map((benefitType) => ({
+    amount,
+    benefit_type: benefitType,
+    resource_id: "generate_video",
+    resource_id_type: "str",
+    resource_sub_type: "aigc",
+  }));
+}
+
+function buildVideoSceneOptions(
+  model: string,
+  adaptedInput: ReturnType<typeof adaptVideoGenerationInput>,
+) {
+  return [
+    {
+      type: "video",
+      scene: "BasicVideoGenerateButton",
+      resolution: adaptedInput.resolution,
+      modelReqKey: model,
+      videoDuration: videoDurationSeconds(adaptedInput),
+      batchNumber: 1,
+      inputVideoDuration: 0,
+      useSeedanceFast5sFreeTrial: false,
+      reportParams: {
+        enterSource: "generate",
+        vipSource: "generate",
+        extraVipFunctionKey: `${model}-${adaptedInput.resolution}`,
+        useVipFunctionDetailsReporterHoc: true,
+      },
+      materialTypes: [],
+    },
+  ];
+}
+
+function buildVideoMetricsExtra(
+  model: string,
+  adaptedInput: ReturnType<typeof adaptVideoGenerationInput>,
+  submitId: string,
+  submitGroupId: string,
+) {
+  return JSON.stringify({
+    isDefaultSeed: 1,
+    originSubmitId: submitId,
+    isRegenerate: false,
+    enterFrom: "click",
+    position: "page_bottom_box",
+    promptType: "original_prompt",
+    functionMode: "omni_reference",
+    sceneOptions: JSON.stringify(buildVideoSceneOptions(model, adaptedInput)),
+    batchNumber: 1,
+    submitGroupId,
+    hasRejectedAudit: 0,
+  });
+}
+
+function buildVideoBabiParam(model: string) {
+  return encodeURIComponent(
+    JSON.stringify({
+      feature_entrance: "makesame",
+      feature_entrance_detail: "makesame-text_to_video",
+      feature_key: "text_to_video",
+      scenario: "image_video_generation",
+      edit_type: "tool",
+      tool_id: "tool_video",
+      sub_tool_id: "tool_video",
+      tab_name: "tool",
+      enter_from: "tool",
+      template_id: "",
+      scene_lv1: "tool",
+      scene_lv2: "tool_video",
+      extra_params: {
+        model_id: model,
+        generate_type: "t2v",
+      },
+    }),
+  );
+}
+
+export function buildDreaminaVideoGenerationRequest({
+  model,
+  prompt,
+  adaptedInput,
+  firstFrameImage,
+  endFrameImage,
+  submitId = util.uuid(),
+  submitGroupId = util.uuid(),
+  draftId = util.uuid(),
+  componentId = util.uuid(),
+  nowMs = Date.now(),
+  seed = Math.floor(Math.random() * 100000000) + 2500000000,
+  generateId = `gen-${util.uuid()}`,
+}: BuildDreaminaVideoGenerationRequestInput) {
+  const metricsExtra = buildVideoMetricsExtra(model, adaptedInput, submitId, submitGroupId);
+  const videoCommerceInfoList = buildVideoCommerceInfoList(model, adaptedInput);
+
+  return {
+    submitId,
+    params: {
+      web_version: WEB_VERSION,
+      da_version: DRAFT_VERSION,
+      web_component_open_flag: 1,
+      generate_id: generateId,
+      babi_param: buildVideoBabiParam(model),
+      commerce_with_input_video: 1,
+      aigc_features: "app_lip_sync",
+    },
+    data: {
+      extend: {
+        root_model: model,
+        m_video_commerce_info: videoCommerceInfoList[0],
+        workspace_id: 0,
+        m_video_commerce_info_list: videoCommerceInfoList,
+      },
+      submit_id: submitId,
+      metrics_extra: metricsExtra,
+      draft_content: JSON.stringify({
+        type: "draft",
+        id: draftId,
+        min_version: "3.0.5",
+        min_features: [],
+        is_from_tsn: true,
+        version: DRAFT_VERSION,
+        main_component_id: componentId,
+        component_list: [
+          {
+            type: "video_base_component",
+            id: componentId,
+            min_version: "1.0.0",
+            aigc_mode: "workbench",
+            metadata: {
+              type: "",
+              id: util.uuid(),
+              created_platform: 3,
+              created_platform_version: "",
+              created_time_in_ms: String(nowMs),
+              created_did: "",
+            },
+            generate_type: "gen_video",
+            abilities: {
+              type: "",
+              id: util.uuid(),
+              gen_video: {
+                type: "",
+                id: util.uuid(),
+                text_to_video_params: {
+                  type: "",
+                  id: util.uuid(),
+                  video_gen_inputs: [
+                    {
+                      type: "",
+                      id: util.uuid(),
+                      min_version: "3.0.5",
+                      prompt,
+                      video_mode: 2,
+                      fps: adaptedInput.fps,
+                      duration_ms: adaptedInput.durationMs,
+                      resolution: adaptedInput.resolution,
+                      first_frame_image: firstFrameImage,
+                      end_frame_image: endFrameImage,
+                      idip_meta_list: [],
+                    },
+                  ],
+                  video_aspect_ratio: adaptedInput.aspectRatio,
+                  seed,
+                  model_req_key: model,
+                  priority: 0,
+                },
+                video_task_extra: metricsExtra,
+              },
+            },
+            process_type: 1,
+          },
+        ],
+      }),
+      http_common_info: {
+        aid: Number(DEFAULT_ASSISTANT_ID),
+      },
+    },
+  };
+}
+
+export function extractDreaminaVideoUrl(record: any): string | undefined {
+  const item = record?.item_list?.[0];
+  return (
+    item?.video?.transcoded_video?.origin?.video_url ||
+    item?.video?.origin_video?.video_url ||
+    item?.video?.play_url ||
+    item?.video?.download_url ||
+    item?.video?.url ||
+    item?.common_attr?.item_urls?.find((url: unknown) => typeof url === "string" && url.length > 0)
+  );
+}
+
+export function getDreaminaVideoHistoryRecord(
+  result: any,
+  submitId: string,
+  historyId?: string,
+) {
+  if (!result || typeof result !== "object") return undefined;
+
+  if (result[submitId]) return result[submitId];
+  if (historyId && result[historyId]) return result[historyId];
+  if (Array.isArray(result.history_list) && result.history_list.length > 0) return result.history_list[0];
+  if (Array.isArray(result.history_records) && result.history_records.length > 0) return result.history_records[0];
+
+  const values = Object.values(result).filter((value) => value && typeof value === "object") as any[];
+  return values.find((value) => value.submit_id === submitId || value.history_record_id === historyId);
+}
+
+export function isDreaminaVideoProcessing(record: any): boolean {
+  return [20, 42, 45].includes(Number(record?.status));
+}
+
 /**
  * 生成视频
  */
@@ -366,7 +630,7 @@ export async function generateVideo(
   },
   refreshToken: string,
   proxyOpts: RequestProxyOptions = {}
-) {
+): Promise<string> {
   const model = getModel(_model);
   if (!isSupportedVideoModelReqKey(model)) {
     throw new APIException(
@@ -478,115 +742,29 @@ export async function generateVideo(
     logger.info(`未提供图片文件，将进行纯文本视频生成`);
   }
 
-  const componentId = util.uuid();
-  const metricsExtra = JSON.stringify({
-    "enterFrom": "click",
-    "isDefaultSeed": 1,
-    "promptSource": "custom",
-    "isRegenerate": false,
-    "originSubmitId": util.uuid(),
-  });
-  const videoBenefitTypes = resolveVideoBenefitTypes(
-    {
-      kind: "video",
-      model,
-      width: adaptedInput.width,
-      height: adaptedInput.height,
-      resolution: adaptedInput.resolution,
-      durationSec: adaptedInput.durationMs / 1000,
-      filePaths: adaptedInput.filePaths,
-    },
+  const generationRequest = buildDreaminaVideoGenerationRequest({
     model,
+    prompt,
     adaptedInput,
-  ) || ["basic_video_operation_vgfm_v_three"];
-  const videoCommerceInfoList = videoBenefitTypes.map((benefitType) => ({
-    benefit_type: benefitType,
-    resource_id: "generate_video",
-    resource_id_type: "str",
-    resource_sub_type: "aigc",
-  }));
-  
+    firstFrameImage: first_frame_image,
+    endFrameImage: end_frame_image,
+  });
+
   const { aigc_data } = await request(
     "post",
     "/mweb/v1/aigc_draft/generate",
     refreshToken,
     {
       proxyUrl: proxyOpts.proxyUrl,
-      params: {
-        aigc_features: "app_lip_sync",
-        web_version: "6.6.0",
-        da_version: DRAFT_VERSION,
-      },
-        data: {
-        "extend": {
-          "root_model": model,
-          "m_video_commerce_info": videoCommerceInfoList[0],
-          "m_video_commerce_info_list": videoCommerceInfoList
-        },
-        "submit_id": util.uuid(),
-        "metrics_extra": metricsExtra,
-        "draft_content": JSON.stringify({
-          "type": "draft",
-          "id": util.uuid(),
-          "min_version": "3.0.5",
-          "is_from_tsn": true,
-          "version": DRAFT_VERSION,
-          "main_component_id": componentId,
-          "component_list": [{
-            "type": "video_base_component",
-            "id": componentId,
-            "min_version": "1.0.0",
-            "metadata": {
-              "type": "",
-              "id": util.uuid(),
-              "created_platform": 3,
-              "created_platform_version": "",
-              "created_time_in_ms": Date.now(),
-              "created_did": ""
-            },
-            "generate_type": "gen_video",
-            "aigc_mode": "workbench",
-            "abilities": {
-              "type": "",
-              "id": util.uuid(),
-              "gen_video": {
-                "id": util.uuid(),
-                "type": "",
-                "text_to_video_params": {
-                  "type": "",
-                  "id": util.uuid(),
-                  "model_req_key": model,
-                  "priority": 0,
-                  "seed": Math.floor(Math.random() * 100000000) + 2500000000,
-                  "video_aspect_ratio": adaptedInput.aspectRatio,
-                  "video_gen_inputs": [{
-                    duration_ms: adaptedInput.durationMs,
-                    first_frame_image: first_frame_image,
-                    end_frame_image: end_frame_image,
-                    fps: adaptedInput.fps,
-                    id: util.uuid(),
-                    min_version: "3.0.5",
-                    prompt: prompt,
-                    resolution: adaptedInput.resolution,
-                    type: "",
-                    video_mode: 2
-                  }]
-                },
-                "video_task_extra": metricsExtra,
-              }
-            }
-          }],
-        }),
-        http_common_info: {
-          aid: Number(DEFAULT_ASSISTANT_ID),
-        },
-      },
+      params: generationRequest.params,
+      data: generationRequest.data,
     }
   );
 
-  const historyId = aigc_data.history_record_id;
+  const historyId = aigc_data?.history_record_id;
   if (!historyId)
     throw new APIException(EX.API_IMAGE_GENERATION_FAILED, "记录ID不存在");
+  const pollingSubmitId = aigc_data?.submit_id || generationRequest.submitId;
 
   let status = 20, failCode, item_list: any[] = [];
   let retryCount = 0;
@@ -598,85 +776,43 @@ export async function generateVideo(
   logger.info(`Dreamina官网API地址: https://dreamina.capcut.com/mweb/v1/get_history_by_ids`);
   logger.info(`视频生成请求已发送，请同时在Dreamina官网查看: https://dreamina.capcut.com/ai-tool/video/generate`);
   
-  while (status === 20 && retryCount < maxRetries) {
+  while (isDreaminaVideoProcessing({ status }) && retryCount < maxRetries) {
     try {
       const requestUrl = "/mweb/v1/get_history_by_ids";
-      const requestData = {
-        history_ids: [historyId],
-      };
-      
-      let result;
-      let useAlternativeApi = retryCount > 10 && retryCount % 2 === 0;
-      
-      if (useAlternativeApi) {
-        logger.info(`尝试备用API请求方式，URL: ${requestUrl}, 历史ID: ${historyId}, 重试次数: ${retryCount + 1}/${maxRetries}`);
-        const alternativeRequestData = {
-          history_record_ids: [historyId],
-        };
-        result = await request("post", "/mweb/v1/get_history_records", refreshToken, {
-          data: alternativeRequestData,
-        });
-        logger.info(`备用API响应: ${JSON.stringify(result)}`);
-        
-        const responseStr = JSON.stringify(result);
-        const videoUrlMatch = responseStr.match(/https:\/\/v[0-9]+-artist\.vlabvod\.com\/[^"\s]+/);
-        if (videoUrlMatch && videoUrlMatch[0]) {
-          logger.info(`从备用API响应中直接提取到视频URL: ${videoUrlMatch[0]}`);
-          return videoUrlMatch[0];
-        }
-      } else {
-        logger.info(`发送请求获取视频生成结果，URL: ${requestUrl}, 历史ID: ${historyId}, 重试次数: ${retryCount + 1}/${maxRetries}`);
-        result = await request("post", requestUrl, refreshToken, {
-          data: requestData,
-        });
-        const responseStr = JSON.stringify(result);
-        logger.info(`标准API响应摘要: ${responseStr.substring(0, 300)}...`);
-        
-        const videoUrlMatch = responseStr.match(/https:\/\/v[0-9]+-artist\.vlabvod\.com\/[^"\s]+/);
-        if (videoUrlMatch && videoUrlMatch[0]) {
-          logger.info(`从标准API响应中直接提取到视频URL: ${videoUrlMatch[0]}`);
-          return videoUrlMatch[0];
-        }
-      }
-      
+      logger.info(`发送请求获取视频生成结果，URL: ${requestUrl}, submitId: ${pollingSubmitId}, 历史ID: ${historyId}, 重试次数: ${retryCount + 1}/${maxRetries}`);
+      const result = await request("post", requestUrl, refreshToken, {
+        proxyUrl: proxyOpts.proxyUrl,
+        data: {
+          submit_ids: [pollingSubmitId],
+        },
+      });
+      const responseStr = JSON.stringify(result);
+      logger.info(`标准API响应摘要: ${responseStr.substring(0, 300)}...`);
 
-      let historyData;
-      
-      if (useAlternativeApi && result.history_records && result.history_records.length > 0) {
-        historyData = result.history_records[0];
-        logger.info(`从备用API获取到历史记录`);
-      } else if (result.history_list && result.history_list.length > 0) {
-        historyData = result.history_list[0];
-        logger.info(`从标准API获取到历史记录`);
-      } else {
-        logger.warn(`历史记录不存在，重试中 (${retryCount + 1}/${maxRetries})... 历史ID: ${historyId}`);
+      const historyData = getDreaminaVideoHistoryRecord(result, pollingSubmitId, historyId);
+      if (!historyData) {
+        logger.warn(`历史记录不存在，重试中 (${retryCount + 1}/${maxRetries})... submitId: ${pollingSubmitId}, 历史ID: ${historyId}`);
         logger.info(`请同时在Dreamina官网检查视频是否已生成: https://dreamina.capcut.com/ai-tool/video/generate`);
-        
+
         retryCount++;
         const waitTime = Math.min(2000 * (retryCount + 1), 30000);
         logger.info(`等待 ${waitTime}ms 后进行第 ${retryCount + 1} 次重试`);
         await new Promise((resolve) => setTimeout(resolve, waitTime));
         continue;
       }
-      
-      logger.info(`获取到历史记录结果: ${JSON.stringify(historyData)}`);
-      
 
-      status = historyData.status;
+      logger.info(`获取到历史记录结果: ${JSON.stringify(historyData)}`);
+
+      status = Number(historyData.status);
       failCode = historyData.fail_code;
       item_list = historyData.item_list || [];
-      
+
       logger.info(`视频生成状态: ${status}, 失败代码: ${failCode || '无'}, 项目列表长度: ${item_list.length}`);
-      
-      let tempVideoUrl = item_list?.[0]?.video?.transcoded_video?.origin?.video_url;
-      if (!tempVideoUrl) {
-        tempVideoUrl = item_list?.[0]?.video?.play_url || 
-                      item_list?.[0]?.video?.download_url || 
-                      item_list?.[0]?.video?.url;
-      }
-      
+
+      const tempVideoUrl = extractDreaminaVideoUrl(historyData);
       if (tempVideoUrl) {
         logger.info(`检测到视频URL: ${tempVideoUrl}`);
+        return tempVideoUrl;
       }
 
       if (status === 30) {
@@ -686,44 +822,33 @@ export async function generateVideo(
         error.historyId = historyId;
         throw error;
       }
-      
-      if (status === 20) {
+
+      if (isDreaminaVideoProcessing(historyData)) {
         const waitTime = 2000 * (Math.min(retryCount + 1, 5));
         logger.info(`视频生成中，状态码: ${status}，等待 ${waitTime}ms 后继续查询`);
         await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
     } catch (error: any) {
+      if (error instanceof APIException) throw error;
       logger.error(`轮询视频生成结果出错: ${error.message}`);
       retryCount++;
       await new Promise((resolve) => setTimeout(resolve, 2000 * (retryCount + 1)));
     }
   }
   
-  if (retryCount >= maxRetries && status === 20) {
+  if (retryCount >= maxRetries && isDreaminaVideoProcessing({ status })) {
     logger.error(`视频生成超时，已尝试 ${retryCount} 次，总耗时约 ${Math.floor(retryCount * 2000 / 1000 / 60)} 分钟`);
     const error = new APIException(EX.API_IMAGE_GENERATION_FAILED, "获取视频生成结果超时，请稍后在Dreamina官网查看您的视频");
     error.historyId = historyId;
     throw error;
   }
 
-  let videoUrl = item_list?.[0]?.video?.transcoded_video?.origin?.video_url;
-  
+  const videoUrl = extractDreaminaVideoUrl({ item_list });
   if (!videoUrl) {
-    if (item_list?.[0]?.video?.play_url) {
-      videoUrl = item_list[0].video.play_url;
-      logger.info(`从play_url获取到视频URL: ${videoUrl}`);
-    } else if (item_list?.[0]?.video?.download_url) {
-      videoUrl = item_list[0].video.download_url;
-      logger.info(`从download_url获取到视频URL: ${videoUrl}`);
-    } else if (item_list?.[0]?.video?.url) {
-      videoUrl = item_list[0].video.url;
-      logger.info(`从url获取到视频URL: ${videoUrl}`);
-    } else {
-      logger.error(`未能获取视频URL，item_list: ${JSON.stringify(item_list)}`);
-      const error = new APIException(EX.API_IMAGE_GENERATION_FAILED, "未能获取视频URL，请稍后在Dreamina官网查看");
-      error.historyId = historyId;
-      throw error;
-    }
+    logger.error(`未能获取视频URL，item_list: ${JSON.stringify(item_list)}`);
+    const error = new APIException(EX.API_IMAGE_GENERATION_FAILED, "未能获取视频URL，请稍后在Dreamina官网查看");
+    error.historyId = historyId;
+    throw error;
   }
 
   logger.info(`视频生成成功，URL: ${videoUrl}`);

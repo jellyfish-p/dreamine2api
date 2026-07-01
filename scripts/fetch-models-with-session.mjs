@@ -36,6 +36,7 @@ const ALLOWED_VIDEO_MODEL_REQ_KEYS = new Set([
   "dreamina_seedance_40_pro",
   "dreamina_ic_generate_video_model_vgfm_3.5_pro",
   "dreamina_ic_generate_video_model_vgfm_3.0_pro",
+  "dreamina_ic_generate_video_model_vgfm_3.0_fast",
 ]);
 
 function sign(uri) {

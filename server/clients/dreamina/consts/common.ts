@@ -18,14 +18,14 @@ export const APP_SDK_VERSION = "48.0.0";
 export const WEB_VERSION = "7.5.0";
 
 // DA版本 (draft版本)
-export const DA_VERSION = "3.3.7";
+export const DA_VERSION = "3.3.20";
 
 // 默认模型
 export const DEFAULT_IMAGE_MODEL = "high_aes_general_v40l";
 export const DEFAULT_VIDEO_MODEL = "dreamina_seedance_40_pro";
 
 // 草稿版本
-export const DRAFT_VERSION = "3.3.7";
+export const DRAFT_VERSION = "3.3.20";
 
 // 图像模型映射
 export const IMAGE_MODEL_MAP: Record<string, string> = {
@@ -39,6 +39,7 @@ export const IMAGE_MODEL_MAP: Record<string, string> = {
 // 视频模型映射
 export const VIDEO_MODEL_MAP: Record<string, string> = {
   "seedance-1.0": "dreamina_ic_generate_video_model_vgfm_3.0_pro",
+  "seedance-1.0-fast": "dreamina_ic_generate_video_model_vgfm_3.0_fast",
   "seedance-1.5-pro": "dreamina_ic_generate_video_model_vgfm_3.5_pro",
   "seedance-2.0": "dreamina_seedance_40_pro",
   "seedance-2.0-fast": "dreamina_seedance_40",

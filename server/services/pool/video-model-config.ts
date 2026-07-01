@@ -2,7 +2,8 @@ export type VideoInputMediaType =
   | "unified_edit"
   | "prompt"
   | "first_frame"
-  | "end_frame";
+  | "end_frame"
+  | "multi_frame";
 
 export type VideoModelInputConfig = {
   modelReqKey: string;
@@ -63,6 +64,14 @@ export const VIDEO_MODEL_INPUT_CONFIGS: VideoModelInputConfig[] = [
     modelReqKey: "dreamina_ic_generate_video_model_vgfm_3.0_pro",
     resolutions: ["1080p"],
     inputMediaTypes: ["prompt", "first_frame"],
+    frames: [120, 240],
+    fps: [24],
+    aspectRatios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+  },
+  {
+    modelReqKey: "dreamina_ic_generate_video_model_vgfm_3.0_fast",
+    resolutions: ["720p", "1080p"],
+    inputMediaTypes: ["prompt", "first_frame", "multi_frame"],
     frames: [120, 240],
     fps: [24],
     aspectRatios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],

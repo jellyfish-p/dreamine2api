@@ -20,6 +20,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   { public_id: "seedance-2.0-fast", model_req_key: "dreamina_seedance_40", model_type: "video", model_name: "Seedance 2.0 Fast" },
   { public_id: "seedance-2.0", model_req_key: "dreamina_seedance_40_pro", model_type: "video", model_name: "Seedance 2.0" },
   { public_id: "seedance-1.5-pro", model_req_key: "dreamina_ic_generate_video_model_vgfm_3.5_pro", model_type: "video", model_name: "Seedance 1.5 Pro" },
+  { public_id: "seedance-1.0-fast", model_req_key: "dreamina_ic_generate_video_model_vgfm_3.0_fast", model_type: "video", model_name: "Seedance 1.0 Fast" },
   { public_id: "seedance-1.0", model_req_key: "dreamina_ic_generate_video_model_vgfm_3.0_pro", model_type: "video", model_name: "Seedance 1.0" },
 ];
 

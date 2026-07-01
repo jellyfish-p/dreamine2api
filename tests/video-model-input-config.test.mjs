@@ -13,9 +13,8 @@ function readJson(relPath) {
   return JSON.parse(read(relPath));
 }
 
-const staleVideoModelIds = ["seedance-1.0-fast", "seedance-1.0-pro", "sora2", "veo-3.1", "veo-3"];
+const staleVideoModelIds = ["seedance-1.0-pro", "sora2", "veo-3.1", "veo-3"];
 const staleVideoReqKeys = [
-  "dreamina_ic_generate_video_model_vgfm_3.0_fast",
   "dreamina_ic_generate_video_model_vgfm_3.0",
   "dreamina_sora2_generate_video",
   "dreamina_veo3.1_generate_video",
@@ -45,6 +44,7 @@ test("public video model catalog removes stale models absent from Dreamina confi
     "seedance-2.0-fast",
     "seedance-2.0",
     "seedance-1.5-pro",
+    "seedance-1.0-fast",
     "seedance-1.0",
   ]);
 
@@ -105,7 +105,7 @@ test("video client does not route end-frame jobs through nonexistent Seedance 1.
     !source.includes('"root_model": end_frame_image ? "dreamina_ic_generate_video_model_vgfm_3.0" : model'),
     "end-frame jobs should not force the stale dreamina_ic_generate_video_model_vgfm_3.0 key",
   );
-  assert.match(source, /"root_model": model/, "root_model should use the resolved supported model");
+  assert.match(source, /root_model:\s*model/, "root_model should use the resolved supported model");
 });
 
 test("video input adapter includes capabilities from provided Dreamina config", () => {
@@ -114,6 +114,6 @@ test("video input adapter includes capabilities from provided Dreamina config", 
   assert.ok(source.includes("dreamina_seedance_40_pro"), "Seedance 2.0 should be configured");
   assert.ok(source.includes('"4k"'), "Seedance 2.0 should retain 4k as a supported resolution");
   assert.ok(source.includes("dreamina_ic_generate_video_model_vgfm_3.0_pro"), "Seedance 1.0 should be configured");
-  assert.ok(!source.includes("dreamina_ic_generate_video_model_vgfm_3.0_fast"), "Seedance 1.0 Fast should not be configured");
-  assert.ok(!source.includes('"multi_frame"'), "multi_frame should not be exposed without Seedance 1.0 Fast");
+  assert.ok(source.includes("dreamina_ic_generate_video_model_vgfm_3.0_fast"), "Seedance 1.0 Fast should be configured");
+  assert.ok(source.includes('"multi_frame"'), "Seedance 1.0 Fast should retain multi_frame input capability");
 });

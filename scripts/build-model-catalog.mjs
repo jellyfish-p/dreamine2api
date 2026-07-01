@@ -14,6 +14,7 @@ const CATALOG = [
   ["seedance-2.0-fast", "dreamina_seedance_40", "video", "Seedance 2.0 Fast"],
   ["seedance-2.0", "dreamina_seedance_40_pro", "video", "Seedance 2.0"],
   ["seedance-1.5-pro", "dreamina_ic_generate_video_model_vgfm_3.5_pro", "video", "Seedance 1.5 Pro"],
+  ["seedance-1.0-fast", "dreamina_ic_generate_video_model_vgfm_3.0_fast", "video", "Seedance 1.0 Fast"],
   ["seedance-1.0", "dreamina_ic_generate_video_model_vgfm_3.0_pro", "video", "Seedance 1.0"],
 ];
 
